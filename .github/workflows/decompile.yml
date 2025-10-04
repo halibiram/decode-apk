@@ -55,25 +55,26 @@ jobs:
         run: |
           ./apktool d ${{ steps.find_apk.outputs.apk_path }} -o decompiled_apktool -f
 
-      - name: Commit Decompiled Files to `decompiled/latest` Branch
+      - name: Commit Decompiled Files to Master
         run: |
+          APK_NAME="${{ steps.find_apk.outputs.apk_name }}"
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Yeni "decompiled/latest" branch oluştur (temiz)
-          git checkout --orphan decompiled/latest
+          # Decompile klasörlerini temizle ve güncel sonuçları taşı
+          mkdir -p decompiled/${APK_NAME}
+          rm -rf decompiled/${APK_NAME}/jadx
+          rm -rf decompiled/${APK_NAME}/apktool
+          mv decompiled_jadx decompiled/${APK_NAME}/jadx
+          mv decompiled_apktool decompiled/${APK_NAME}/apktool
 
-          # Repo'daki her şeyi sil
-          git rm -rf . > /dev/null 2>&1 || true
-
-          # Çıktıları taşı
-          mkdir -p output
-          mv decompiled_jadx output/jadx
-          mv decompiled_apktool output/apktool
-
-          # Commit ve push
-          git add output
-          git commit -m "feat: Decompiled APK ${{ steps.find_apk.outputs.apk_name }}" -m "JADX + Apktool çıktıları 'decompiled/latest' branch'e eklendi."
-          git push origin decompiled/latest --force
-
-          echo "🚀 Decompiled dosyalar 'decompiled/latest' branch'e push edildi."
+          git add decompiled/${APK_NAME}
+          if git diff --cached --quiet; then
+            echo "✅ Yeni değişiklik yok, commit yapılmadı."
+          else
+            git commit -m "chore: Update decompiled files for ${APK_NAME}" \
+                        -m "JADX + Apktool çıktıları güncellendi."
+            git push origin master
+            echo "🚀 Decompiled dosyalar master'a push edildi."
+          fi
