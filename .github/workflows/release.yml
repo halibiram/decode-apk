@@ -1,10 +1,10 @@
-name: Recompile, Sign, and Release APK (Test Build)
+name: Recompile, Sign, and Push APK to Master
 
 on:
   workflow_dispatch:
 
 jobs:
-  build_and_release:
+  build_and_push:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # We need to fetch all history to be able to push
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -40,25 +43,15 @@ jobs:
         run: |
           APP_NAME="${{ steps.find_app.outputs.app_name }}"
 
-          # Clean public.xml
           PUBLIC_XML_PATH="decompiled/${APP_NAME}/apktool/res/values/public.xml"
           if [ -f "$PUBLIC_XML_PATH" ]; then
-            echo "🧹 Cleaning $PUBLIC_XML_PATH..."
             sed -i '/admob_empty_layout/d' "$PUBLIC_XML_PATH"
             sed -i '/gma_ad_services_config/d' "$PUBLIC_XML_PATH"
-            echo "✅ Cleaned public.xml."
-          else
-            echo "⚠️ public.xml not found, skipping."
           fi
 
-          # Clean AndroidManifest.xml
           MANIFEST_PATH="decompiled/${APP_NAME}/apktool/AndroidManifest.xml"
           if [ -f "$MANIFEST_PATH" ]; then
-            echo "🧹 Cleaning $MANIFEST_PATH..."
             sed -i '/gma_ad_services_config/d' "$MANIFEST_PATH"
-            echo "✅ Cleaned AndroidManifest.xml."
-          else
-            echo "⚠️ AndroidManifest.xml not found, skipping."
           fi
 
       - name: Recompile APK
@@ -67,45 +60,30 @@ jobs:
           APP_NAME="${{ steps.find_app.outputs.app_name }}"
           SOURCE_DIR="decompiled/${APP_NAME}/apktool"
           UNSIGNED_APK="rebuilt_unsigned.apk"
-
-          if [ ! -d "$SOURCE_DIR" ]; then
-            echo "❌ Source directory not found: $SOURCE_DIR"
-            exit 1
-          fi
-
-          echo "🔨 Recompiling APK from $SOURCE_DIR..."
           java -jar apktool.jar b "$SOURCE_DIR" -o "$UNSIGNED_APK"
-          echo "✅ Recompile complete: $UNSIGNED_APK"
           echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
 
       - name: Sign and Align with Debug Key
         id: sign
         run: |
           FINAL_APK="REBUILT_APPLICATION.apk"
-          echo "🔑 Signing and aligning with uber-apk-signer's debug key..."
           java -jar uber-apk-signer.jar \
             --apks "${{ steps.recompile.outputs.unsigned_apk_path }}" \
             --out "$FINAL_APK"
-          echo "✅ Signing and alignment complete: $FINAL_APK"
           echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
-      - name: Verify Artifact Before Release
+      - name: Push APK to Master
         run: |
-          echo "Verifying artifact exists before release..."
-          ls -lR
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: test-release-${{ steps.find_app.outputs.app_name }}-${{ github.run_number }}
-          name: "Test Release ${{ steps.find_app.outputs.app_name }} #${{ github.run_number }} (Debug Signed)"
-          body: |
-            🧪 **${{ steps.find_app.outputs.app_name }} (Debug Build)**
+          # Create a directory for the builds
+          mkdir -p builds
 
-            - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
-            - Signed with a debug key using `uber-apk-signer`.
-            - The main artifact is `REBUILT_APPLICATION.apk`.
-            - Workflow run: ${{ github.run_id }}
-          files: "${{ steps.sign.outputs.final_apk_path }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Move the APK to the builds directory
+          mv "${{ steps.sign.outputs.final_apk_path }}" builds/
+
+          # Add, commit, and push the new APK
+          git add builds/REBUILT_APPLICATION.apk
+          git commit -m "build: Add recompiled APK from workflow run ${{ github.run_number }}"
+          git push origin master
