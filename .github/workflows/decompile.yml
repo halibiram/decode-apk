@@ -1,16 +1,15 @@
 name: Decompile APK with JADX & Apktool
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '*.apk'
-  workflow_dispatch:
 
 jobs:
   decompile:
     runs-on: ubuntu-latest
     permissions:
-      issues: write
       contents: write
 
     steps:
@@ -23,14 +22,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # JADX indir
       - name: Download JADX
         run: |
           wget -q https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
           unzip -q jadx-1.5.0.zip -d jadx
           chmod +x jadx/bin/jadx
 
-      # Apktool indir
       - name: Download Apktool
         run: |
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
@@ -48,48 +45,35 @@ jobs:
           echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
           echo "apk_name=$(basename $APK_FILE .apk)" >> $GITHUB_OUTPUT
 
-      # JADX ile decompile
       - name: Decompile with JADX
         run: |
           ./jadx/bin/jadx -d decompiled_jadx \
             --show-bad-code \
             ${{ steps.find_apk.outputs.apk_path }}
 
-      # Apktool ile decompile
       - name: Decompile with Apktool
         run: |
           ./apktool d ${{ steps.find_apk.outputs.apk_path }} -o decompiled_apktool -f
 
-      # Analiz için her iki klasörü de işleyebilirsin
-      - name: Analyze structure
+      - name: Commit Decompiled Files to `decompiled/latest` Branch
         run: |
-          echo "=== JADX kaynak dosyaları ===" > analysis_report.txt
-          find decompiled_jadx -name '*.java' | head -20 >> analysis_report.txt
-          echo "" >> analysis_report.txt
-          echo "Toplam Java dosyası: $(find decompiled_jadx -name '*.java' | wc -l)" >> analysis_report.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-          echo "" >> analysis_report.txt
-          echo "=== Apktool smali dosyaları ===" >> analysis_report.txt
-          find decompiled_apktool -name '*.smali' | head -20 >> analysis_report.txt
-          echo "" >> analysis_report.txt
-          echo "Toplam smali dosyası: $(find decompiled_apktool -name '*.smali' | wc -l)" >> analysis_report.txt
+          # Yeni "decompiled/latest" branch oluştur (temiz)
+          git checkout --orphan decompiled/latest
 
-          cat analysis_report.txt
+          # Repo'daki her şeyi sil
+          git rm -rf . > /dev/null 2>&1 || true
 
-      - name: Upload JADX sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: jadx-sources-${{ steps.find_apk.outputs.apk_name }}
-          path: decompiled_jadx/
+          # Çıktıları taşı
+          mkdir -p output
+          mv decompiled_jadx output/jadx
+          mv decompiled_apktool output/apktool
 
-      - name: Upload Apktool decompile
-        uses: actions/upload-artifact@v4
-        with:
-          name: apktool-decompile-${{ steps.find_apk.outputs.apk_name }}
-          path: decompiled_apktool/
+          # Commit ve push
+          git add output
+          git commit -m "feat: Decompiled APK ${{ steps.find_apk.outputs.apk_name }}" -m "JADX + Apktool çıktıları 'decompiled/latest' branch'e eklendi."
+          git push origin decompiled/latest --force
 
-      - name: Upload analysis report
-        uses: actions/upload-artifact@v4
-        with:
-          name: analysis-report-${{ steps.find_apk.outputs.apk_name }}
-          path: analysis_report.txt
+          echo "🚀 Decompiled dosyalar 'decompiled/latest' branch'e push edildi."
