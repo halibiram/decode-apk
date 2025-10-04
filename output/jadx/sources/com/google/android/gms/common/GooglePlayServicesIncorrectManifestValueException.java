@@ -1,0 +1,23 @@
+package com.google.android.gms.common;
+
+import com.google.android.gms.common.annotation.KeepName;
+import com.panda912.muddy.ObfuscatedString;
+import defpackage.AbstractC0749x8313616e;
+
+@KeepName
+/* loaded from: classes2.dex */
+public final class GooglePlayServicesIncorrectManifestValueException extends GooglePlayServicesManifestException {
+    /* JADX WARN: Illegal instructions before constructor call */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+    */
+    public GooglePlayServicesIncorrectManifestValueException(int i) {
+        super(i, AbstractC0749x8313616e.m3332x9d12c1f4(new ObfuscatedString(new long[]{2689124732346302102L, 7459760266700527882L, -3270369461887956529L, -1692185910981347774L, 669156107605223368L, 5725794964845437906L, -5189472764846839959L, -3260251658702191196L, 7331823023467312096L, 8501968575926437569L, -810119622971897466L, 2953202441887440864L, 5088270252328691176L, 5073463229700657885L, 5989656200334800152L, 8233608087668868231L, 6133003556856133529L, -7121240957388234196L, -9202456768938958221L, -8006548179301599011L, -8878248070569037020L, -5250294913286941028L, -813814660837166212L, -6501412508990476686L, -1490266901065866043L, 2454073334643354738L}), r1));
+        int i2 = GoogleApiAvailabilityLight.GOOGLE_PLAY_SERVICES_VERSION_CODE;
+        StringBuilder sb = new StringBuilder();
+        sb.append(new ObfuscatedString(new long[]{-3817991457143056366L, 8442653933833497850L, 7236107218512606292L, 7524518690022866933L, 4056428142878562820L, 5160808014925026568L, 6616468609818058368L, -6901331029710349690L, 6111621628476661977L, -3211887693329017579L, -5778938079375675182L, -8630451946876026516L, 936927960386531991L}).toString());
+        sb.append(i2);
+        sb.append(new ObfuscatedString(new long[]{4711004077375886077L, -4595237095304494749L, -4726536410466041484L}).toString());
+        sb.append(i);
+    }
+}

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" android:orientation="vertical" android:padding="10.0dip" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout android:id="@id/tv_title" android:layout_width="fill_parent" android:layout_height="?actionBarSize">
+        <androidx.appcompat.widget.AppCompatImageButton android:id="@id/fullscreen_dialog_close" android:background="?selectableItemBackgroundBorderless" android:padding="8.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_network" android:layout_centerVertical="true" android:layout_marginStart="8.0dip" app:tint="@color/colorText" />
+        <androidx.appcompat.widget.AppCompatTextView android:textSize="18.0sp" android:textColor="@color/colorText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/add_tweaks" android:layout_centerVertical="true" android:layout_marginStart="8.0dip" android:layout_toEndOf="@id/fullscreen_dialog_close" />
+        <Button android:theme="@style/AppTheme.SelectNetwork" android:textColor="@color/colorText" android:id="@id/custok_tweak_save" android:background="#00000000" android:padding="8.0dip" android:focusable="true" android:clickable="true" android:layout_width="70.0dip" android:layout_height="60.0dip" android:text="Save" android:layout_centerVertical="true" android:layout_marginEnd="8.0dip" android:layout_alignParentEnd="true" />
+    </RelativeLayout>
+    <ScrollView android:orientation="vertical" android:visibility="visible" android:layout_width="fill_parent" android:layout_height="fill_parent">
+        <LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dip" android:layout_marginBottom="20.0dip">
+            <HorizontalScrollView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dip" android:layout_marginRight="5.0dip">
+                <RadioGroup android:gravity="center" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/http" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="HTTP" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/ssl" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SSL" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/sslproxy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SSL+PROXY" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/udp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="OVPN-UDP" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/tcp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DERECT-TCP" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/hysteria" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HYSTERIA" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/v2ray" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="V2RAY" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/dnstt" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DNSTT" app:buttonTint="@color/colorText" />
+                    <RadioButton android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/wireguard" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WireGuard" app:buttonTint="@color/colorText" />
+                </RadioGroup>
+            </HorizontalScrollView>
+            <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/radio_type" android:layout_width="fill_parent" android:layout_height="50.0dip">
+                <HorizontalScrollView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dip" android:layout_marginRight="5.0dip">
+                    <RadioGroup android:gravity="center" android:orientation="horizontal" android:id="@id/radio_ly" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <RadioButton android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/cf_radio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="CloudFlare" app:buttonTint="@color/colorText" />
+                        <RadioButton android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/ws_radio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Websocket" app:buttonTint="@color/colorText" />
+                        <RadioButton android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/colorText" android:id="@id/http_radio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Normal" app:buttonTint="@color/colorText" />
+                    </RadioGroup>
+                </HorizontalScrollView>
+            </LinearLayout>
+            <androidx.appcompat.widget.LinearLayoutCompat android:background="@drawable/card_export" android:layout_width="fill_parent" android:layout_height="55.0dip" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <androidx.appcompat.widget.AppCompatEditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_tweak_name" android:layout_width="fill_parent" android:layout_height="55.0dip" android:hint="@string/tweaks_name" android:ems="10" android:layout_weight="1.0" android:inputType="textMultiLine" android:layout_marginStart="15.0dip" android:layout_marginEnd="10.0dip" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:background="@drawable/card_export" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="60.0dip" android:layout_marginTop="10.0dip" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <Spinner android:textSize="12.0sp" android:id="@id/custom_tweak_mode" android:layout_width="fill_parent" android:layout_height="50.0dip" android:layout_marginStart="10.0dip" android:layout_marginEnd="10.0dip" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/option1" android:background="@drawable/card_export" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <RelativeLayout android:layout_width="fill_parent" android:layout_height="50.0dip">
+                    <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:background="@drawable/card_export" android:layout_width="fill_parent" android:layout_height="60.0dip" android:layout_centerVertical="true">
+                        <Spinner android:textSize="12.0sp" android:textColorHint="@color/colorText" android:id="@id/preload_pay1" android:layout_width="fill_parent" android:layout_height="48.0dip" android:layout_marginStart="10.0dip" android:layout_marginEnd="10.0dip" />
+                    </androidx.appcompat.widget.LinearLayoutCompat>
+                </RelativeLayout>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/custom_payload_layout" android:background="@drawable/card_export" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dip" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <androidx.appcompat.widget.AppCompatEditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_tweak_edit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:hint="@string/payload_hint" android:ems="10" android:layout_weight="1.0" android:inputType="textMultiLine" android:paddingStart="20.0dip" android:paddingEnd="10.0dip" />
+                <androidx.appcompat.widget.AppCompatImageView android:id="@id/custom_tweak_generate" android:layout_width="35.0dip" android:layout_height="35.0dip" android:src="@drawable/ic_generator" android:layout_marginEnd="15.0dip" app:tint="@color/colorText" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/custom_dnsttdns_layout" android:background="@drawable/card_export" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="50.0dip" android:layout_centerVertical="true" android:layout_marginStart="8.0dip">
+                    <androidx.appcompat.widget.AppCompatEditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/dnstt_dns" android:layout_width="fill_parent" android:layout_height="wrap_content" android:hint="@string/dnstt_dns" android:ems="10" android:layout_weight="1.0" android:inputType="textMultiLine" android:layout_marginStart="15.0dip" android:layout_marginEnd="10.0dip" />
+                </androidx.appcompat.widget.LinearLayoutCompat>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/custom_udp_layout" android:background="@drawable/card_export" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <RelativeLayout android:layout_width="fill_parent" android:layout_height="50.0dip">
+                    <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="50.0dip" android:layout_centerVertical="true" android:layout_marginStart="8.0dip">
+                        <androidx.appcompat.widget.AppCompatEditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_udp_edit" android:layout_width="fill_parent" android:layout_height="wrap_content" android:hint="@string/hysteria_config" android:ems="10" android:layout_weight="1.0" android:inputType="textMultiLine" android:layout_marginStart="15.0dip" android:layout_marginEnd="10.0dip" />
+                    </androidx.appcompat.widget.LinearLayoutCompat>
+                </RelativeLayout>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/custom_proxy_layout" android:background="@drawable/card_export" android:layout_width="wrap_content" android:layout_height="55.0dip" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <RelativeLayout android:layout_width="fill_parent" android:layout_height="55.0dip">
+                    <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="55.0dip" android:layout_centerVertical="true" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                        <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="55.0dip">
+                            <EditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_tweak_proxy" android:layout_width="wrap_content" android:layout_height="55.0dip" android:hint="Proxy" android:ems="10" android:inputType="textUri" android:paddingStart="5.0dip" android:paddingEnd="5.0dip" />
+                            <EditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_tweak_proxy_port" android:layout_width="wrap_content" android:layout_height="55.0dip" android:hint="Port" android:ems="10" android:inputType="number" android:paddingStart="5.0dip" android:paddingEnd="5.0dip" />
+                        </LinearLayout>
+                    </androidx.appcompat.widget.LinearLayoutCompat>
+                </RelativeLayout>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/l_replace" android:layout_width="fill_parent" android:layout_height="wrap_content">
+                <CheckBox android:textColor="@color/colorText" android:id="@id/isReplace" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="5.0dip" android:text="AutoReplace" app:buttonTint="@color/colorText" />
+            </LinearLayout>
+            <androidx.appcompat.widget.LinearLayoutCompat android:id="@id/port_proxy" android:background="@drawable/card_export" android:layout_width="wrap_content" android:layout_height="55.0dip" android:layout_marginBottom="10.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <RelativeLayout android:layout_width="fill_parent" android:layout_height="55.0dip">
+                    <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="55.0dip" android:layout_centerVertical="true" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                        <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="55.0dip">
+                            <CheckBox android:textColor="@color/colorText" android:id="@id/custom_enable_ws" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="5.0dip" android:text="Ws" android:paddingStart="5.0dip" android:paddingEnd="5.0dip" app:buttonTint="@color/colorText" />
+                            <CheckBox android:textColor="@color/colorText" android:id="@id/isFake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="5.0dip" android:text="Fake" android:paddingStart="5.0dip" android:paddingEnd="5.0dip" app:buttonTint="@color/colorText" />
+                            <CheckBox android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_tweak_default_proxy" android:layout_width="wrap_content" android:layout_height="55.0dip" android:text="Default" android:ems="10" android:inputType="number" android:paddingStart="5.0dip" android:paddingEnd="5.0dip" app:buttonTint="@color/colorText" app:tint="@color/colorText" />
+                        </LinearLayout>
+                    </androidx.appcompat.widget.LinearLayoutCompat>
+                </RelativeLayout>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat android:gravity="center" android:orientation="vertical" android:id="@id/custom_sni_layout" android:background="@drawable/card_export" android:layout_width="fill_parent" android:layout_height="50.0dip" android:layout_marginStart="15.0dip" android:layout_marginEnd="15.0dip">
+                <androidx.appcompat.widget.AppCompatEditText android:textSize="12.0sp" android:textColor="@color/colorText" android:textColorHint="@color/colorText" android:id="@id/custom_sni" android:layout_width="fill_parent" android:layout_height="wrap_content" android:hint="SNI Host" android:ems="10" android:layout_weight="1.0" android:inputType="textMultiLine" android:layout_marginStart="15.0dip" android:layout_marginEnd="10.0dip" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,849 @@
+.class public final Lkotlin/UByteArray;
+.super Ljava/lang/Object;
+.source "SourceFile"
+
+# interfaces
+.implements Ljava/util/Collection;
+.implements Lkotlin/jvm/internal/markers/KMappedMarker;
+
+
+# annotations
+.annotation system Ldalvik/annotation/Signature;
+    value = {
+        "Ljava/lang/Object;",
+        "Ljava/util/Collection<",
+        "Lkotlin/UByte;",
+        ">;",
+        "Lkotlin/jvm/internal/markers/KMappedMarker;"
+    }
+.end annotation
+
+.annotation build Lkotlin/ExperimentalUnsignedTypes;
+.end annotation
+
+.annotation runtime Lkotlin/Metadata;
+    d1 = {
+        "\u0000B\n\u0002\u0018\u0002\n\u0002\u0010\u001e\n\u0002\u0018\u0002\n\u0002\u0010\u0008\n\u0002\u0008\u0003\n\u0002\u0010\u0012\n\u0002\u0008\u0002\n\u0002\u0010\u000e\n\u0002\u0008\u0004\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000b\n\u0002\u0008\u0007\n\u0002\u0010\u0002\n\u0002\u0008\u0003\n\u0002\u0010(\n\u0002\u0008\u0016\u0008\u0087@\u0018\u00002\u0008\u0012\u0004\u0012\u00020\u00020\u0001:\u00012B\u0011\u0008\u0016\u0012\u0006\u0010\u0004\u001a\u00020\u0003\u00a2\u0006\u0004\u0008\u0005\u0010\u0006B\u0011\u0008\u0001\u0012\u0006\u0010\u0008\u001a\u00020\u0007\u00a2\u0006\u0004\u0008\u0005\u0010\tJ\u0010\u0010\u000b\u001a\u00020\nH\u00d6\u0001\u00a2\u0006\u0004\u0008\u000b\u0010\u000cJ\u0010\u0010\r\u001a\u00020\u0003H\u00d6\u0001\u00a2\u0006\u0004\u0008\r\u0010\u000eJ\u001a\u0010\u0012\u001a\u00020\u00112\u0008\u0010\u0010\u001a\u0004\u0018\u00010\u000fH\u00d6\u0003\u00a2\u0006\u0004\u0008\u0012\u0010\u0013J\u0018\u0010\u0017\u001a\u00020\u00022\u0006\u0010\u0014\u001a\u00020\u0003H\u0086\u0002\u00a2\u0006\u0004\u0008\u0015\u0010\u0016J \u0010\u001c\u001a\u00020\u00192\u0006\u0010\u0014\u001a\u00020\u00032\u0006\u0010\u0018\u001a\u00020\u0002H\u0086\u0002\u00a2\u0006\u0004\u0008\u001a\u0010\u001bJ\u0016\u0010 \u001a\u0008\u0012\u0004\u0012\u00020\u00020\u001dH\u0096\u0002\u00a2\u0006\u0004\u0008\u001e\u0010\u001fJ\u0018\u0010$\u001a\u00020\u00112\u0006\u0010!\u001a\u00020\u0002H\u0096\u0002\u00a2\u0006\u0004\u0008\"\u0010#J\u001d\u0010(\u001a\u00020\u00112\u000c\u0010%\u001a\u0008\u0012\u0004\u0012\u00020\u00020\u0001H\u0016\u00a2\u0006\u0004\u0008&\u0010\'J\u000f\u0010+\u001a\u00020\u0011H\u0016\u00a2\u0006\u0004\u0008)\u0010*R\u001a\u0010\u0008\u001a\u00020\u00078\u0000X\u0081\u0004\u00a2\u0006\u000c\n\u0004\u0008,\u0010-\u0012\u0004\u0008.\u0010/R\u0014\u0010\u0004\u001a\u00020\u00038VX\u0096\u0004\u00a2\u0006\u0006\u001a\u0004\u00080\u00101\u0088\u0001\u0008\u0092\u0001\u00020\u0007\u00a8\u00063"
+    }
+    d2 = {
+        "Lkotlin/UByteArray;",
+        "",
+        "Lkotlin/UByte;",
+        "",
+        "size",
+        "constructor-impl",
+        "(I)[B",
+        "",
+        "storage",
+        "([B)[B",
+        "",
+        "toString",
+        "()Ljava/lang/String;",
+        "hashCode",
+        "()I",
+        "",
+        "other",
+        "",
+        "equals",
+        "(Ljava/lang/Object;)Z",
+        "index",
+        "get-w2LRezQ",
+        "([BI)B",
+        "get",
+        "value",
+        "",
+        "set-VurrAj0",
+        "([BIB)V",
+        "set",
+        "",
+        "iterator-impl",
+        "([B)Ljava/util/Iterator;",
+        "iterator",
+        "element",
+        "contains-7apg3OU",
+        "([BB)Z",
+        "contains",
+        "elements",
+        "containsAll-impl",
+        "([BLjava/util/Collection;)Z",
+        "containsAll",
+        "isEmpty-impl",
+        "([B)Z",
+        "isEmpty",
+        "\ub3a0\ub460\ub56a\ub4fc\ub3a0\ub505\ub572\ub454\ub4fd\ub42b\ub51e\ub3f0\ub461\ub51e\ub4fc\ub3a8\ub3a8\ub4d4\ub561\ub51d\ub568\ub543\ub540\ub4bb\ub524\ub539\ub3dd\ub418\ub573\ub572\ub538\ub4be\ub3a8\ub571\ub565\ub3f6\ub49b\ub4b7\ub4e4\ub4a8\ub54b\ub3e0\ub3a1\ub454\ub41c\ub3e4\ub4e0\ub42b\ub539\ub3f3\ub3f4\ub3db\ub54d\ub578\ub4b5\ub451\ub3f3\ub568\ub55d\ub4dd\ub56e\ub560\ub568\ub500\ub504\ub4a8\ub480\ub540\ub54b\ub4fd\ub42b\ub539\ub575\ub528\ub4b5\ub4f8\ub575\ub3ac\ub4bb\ub3e4\ub568\ub450\ub4f0\ub56b\ub57b\ub48b\ub3f6\ub450\ub563\ub3a1\ub3a1\ub4d0\ub56b\ub570\ub489\ub3b9\ub569\ub571\ub451\ub504\ub3f3\ub4f8\ub4a4\ub3bb\ub56e\ub51c\ub57b\ub428\ub3b8\ub4bc\ub503\ub42b\ub3f8\ub56e\ub56e\ub3e8\ub4a8\ub561\ub572\ub528\ub3f7\ub418\ub54b\ub458\ub3e0\ub56a\ub4b7\ub499\ub545\ub3b8",
+        "[B",
+        "getStorage$annotations",
+        "()V",
+        "getSize-impl",
+        "([B)I",
+        "\ub3a1\ub55d\ub4bb\ub565\ub418\ub524\ub3f3\ub3bd\ub500\ub505\ub3fc\ub56b\ub3db\ub4fc\ub3bd\ub49d\ub429\ub4a8\ub563\ub56c\ub4a4\ub566\ub55c\ub460\ub51e\ub3f0\ub498\ub3b8\ub570\ub420\ub566\ub4ec\ub56d\ub56c\ub450\ub504\ub539\ub3a1\ub3e0\ub49d\ub4dc\ub41c\ub575\ub571\ub561\ub539\ub538\ub49b\ub4d4\ub4b9\ub514\ub461\ub504\ub3f8\ub528\ub3f3\ub4be\ub489\ub3ac\ub4f8\ub3fc\ub3f0\ub490\ub4ec\ub3fc\ub461\ub410\ub3f3\ub451\ub489\ub55f\ub480\ub428\ub4be\ub540\ub565\ub565\ub3fc\ub4ec\ub543\ub41c\ub51f\ub51d\ub3f5\ub55c\ub504\ub4bc\ub51e\ub420\ub544\ub504\ub51f\ub530\ub540\ub544\ub3dd\ub420\ub3f7\ub53b\ub4e0\ub55d\ub514\ub545\ub539\ub4fb\ub3f4\ub510\ub3dd\ub458\ub544\ub4df\ub3c4\ub560\ub538\ub3e4\ub3e0\ub578\ub3f3\ub4cc\ub498\ub4a8\ub4e0\ub50e\ub51d\ub4b7\ub567\ub428\ub539\ub563\ub54b",
+        "kotlin-stdlib"
+    }
+    k = 0x1
+    mv = {
+        0x2,
+        0x1,
+        0x0
+    }
+    xi = 0x30
+.end annotation
+
+.annotation build Lkotlin/SinceKotlin;
+    version = "1.3"
+.end annotation
+
+.annotation runtime Lkotlin/jvm/JvmInline;
+.end annotation
+
+.annotation build Lkotlin/jvm/internal/SourceDebugExtension;
+    value = {
+        "SMAP\nUByteArray.kt\nKotlin\n*S Kotlin\n*F\n+ 1 UByteArray.kt\nkotlin/UByteArray\n+ 2 _Collections.kt\nkotlin/collections/CollectionsKt___CollectionsKt\n*L\n1#1,82:1\n1740#2,3:83\n*S KotlinDebug\n*F\n+ 1 UByteArray.kt\nkotlin/UByteArray\n*L\n58#1:83,3\n*E\n"
+    }
+.end annotation
+
+
+# instance fields
+.field public final 뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+
+# direct methods
+.method public synthetic constructor <init>([B)V
+    .locals 0
+
+    .line 1
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    .line 2
+    .line 3
+    .line 4
+    iput-object p1, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    .line 5
+    .line 6
+    return-void
+.end method
+
+.method public static final synthetic box-impl([B)Lkotlin/UByteArray;
+    .locals 1
+
+    new-instance v0, Lkotlin/UByteArray;
+
+    invoke-direct {v0, p0}, Lkotlin/UByteArray;-><init>([B)V
+
+    return-object v0
+.end method
+
+.method public static constructor-impl(I)[B
+    .locals 0
+    .annotation build Lorg/jetbrains/annotations/NotNull;
+    .end annotation
+
+    .line 2
+    new-array p0, p0, [B
+
+    invoke-static {p0}, Lkotlin/UByteArray;->constructor-impl([B)[B
+
+    move-result-object p0
+
+    return-object p0
+.end method
+
+.method public static constructor-impl([B)[B
+    .locals 1
+    .param p0    # [B
+        .annotation build Lorg/jetbrains/annotations/NotNull;
+        .end annotation
+    .end param
+    .annotation build Lkotlin/PublishedApi;
+    .end annotation
+
+    .annotation build Lorg/jetbrains/annotations/NotNull;
+    .end annotation
+
+    .line 1
+    const-string v0, "storage"
+
+    invoke-static {p0, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    return-object p0
+.end method
+
+.method public static contains-7apg3OU([BB)Z
+    .locals 0
+
+    .line 2
+    invoke-static {p0, p1}, Lkotlin/collections/ArraysKt___ArraysKt;->contains([BB)Z
+
+    move-result p0
+
+    return p0
+.end method
+
+.method public static containsAll-impl([BLjava/util/Collection;)Z
+    .locals 3
+    .param p1    # Ljava/util/Collection;
+        .annotation build Lorg/jetbrains/annotations/NotNull;
+        .end annotation
+    .end param
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "([B",
+            "Ljava/util/Collection<",
+            "Lkotlin/UByte;",
+            ">;)Z"
+        }
+    .end annotation
+
+    .line 1
+    const-string v0, "elements"
+
+    .line 2
+    .line 3
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 4
+    .line 5
+    .line 6
+    check-cast p1, Ljava/lang/Iterable;
+
+    .line 7
+    .line 8
+    move-object v0, p1
+
+    .line 9
+    check-cast v0, Ljava/util/Collection;
+
+    .line 10
+    .line 11
+    invoke-interface {v0}, Ljava/util/Collection;->isEmpty()Z
+
+    .line 12
+    .line 13
+    .line 14
+    move-result v0
+
+    .line 15
+    const/4 v1, 0x1
+
+    .line 16
+    if-eqz v0, :cond_0
+
+    .line 17
+    .line 18
+    goto :goto_1
+
+    .line 19
+    :cond_0
+    invoke-interface {p1}, Ljava/lang/Iterable;->iterator()Ljava/util/Iterator;
+
+    .line 20
+    .line 21
+    .line 22
+    move-result-object p1
+
+    .line 23
+    :goto_0
+    invoke-interface {p1}, Ljava/util/Iterator;->hasNext()Z
+
+    .line 24
+    .line 25
+    .line 26
+    move-result v0
+
+    .line 27
+    if-eqz v0, :cond_2
+
+    .line 28
+    .line 29
+    invoke-interface {p1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    .line 30
+    .line 31
+    .line 32
+    move-result-object v0
+
+    .line 33
+    instance-of v2, v0, Lkotlin/UByte;
+
+    .line 34
+    .line 35
+    if-eqz v2, :cond_1
+
+    .line 36
+    .line 37
+    check-cast v0, Lkotlin/UByte;
+
+    .line 38
+    .line 39
+    invoke-virtual {v0}, Lkotlin/UByte;->unbox-impl()B
+
+    .line 40
+    .line 41
+    .line 42
+    move-result v0
+
+    .line 43
+    invoke-static {p0, v0}, Lkotlin/collections/ArraysKt___ArraysKt;->contains([BB)Z
+
+    .line 44
+    .line 45
+    .line 46
+    move-result v0
+
+    .line 47
+    if-eqz v0, :cond_1
+
+    .line 48
+    .line 49
+    goto :goto_0
+
+    .line 50
+    :cond_1
+    const/4 v1, 0x0
+
+    .line 51
+    :cond_2
+    :goto_1
+    return v1
+.end method
+
+.method public static equals-impl([BLjava/lang/Object;)Z
+    .locals 2
+
+    instance-of v0, p1, Lkotlin/UByteArray;
+
+    const/4 v1, 0x0
+
+    if-nez v0, :cond_0
+
+    return v1
+
+    :cond_0
+    check-cast p1, Lkotlin/UByteArray;
+
+    invoke-virtual {p1}, Lkotlin/UByteArray;->unbox-impl()[B
+
+    move-result-object p1
+
+    invoke-static {p0, p1}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result p0
+
+    if-nez p0, :cond_1
+
+    return v1
+
+    :cond_1
+    const/4 p0, 0x1
+
+    return p0
+.end method
+
+.method public static final equals-impl0([B[B)Z
+    .locals 0
+
+    invoke-static {p0, p1}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result p0
+
+    return p0
+.end method
+
+.method public static final get-w2LRezQ([BI)B
+    .locals 0
+
+    .line 1
+    aget-byte p0, p0, p1
+
+    .line 2
+    .line 3
+    invoke-static {p0}, Lkotlin/UByte;->constructor-impl(B)B
+
+    .line 4
+    .line 5
+    .line 6
+    move-result p0
+
+    .line 7
+    return p0
+.end method
+
+.method public static getSize-impl([B)I
+    .locals 0
+
+    .line 1
+    array-length p0, p0
+
+    .line 2
+    return p0
+.end method
+
+.method public static synthetic getStorage$annotations()V
+    .locals 0
+    .annotation build Lkotlin/PublishedApi;
+    .end annotation
+
+    return-void
+.end method
+
+.method public static hashCode-impl([B)I
+    .locals 0
+
+    invoke-static {p0}, Ljava/util/Arrays;->hashCode([B)I
+
+    move-result p0
+
+    return p0
+.end method
+
+.method public static isEmpty-impl([B)Z
+    .locals 0
+
+    .line 1
+    array-length p0, p0
+
+    .line 2
+    if-nez p0, :cond_0
+
+    .line 3
+    .line 4
+    const/4 p0, 0x1
+
+    .line 5
+    goto :goto_0
+
+    .line 6
+    :cond_0
+    const/4 p0, 0x0
+
+    .line 7
+    :goto_0
+    return p0
+.end method
+
+.method public static iterator-impl([B)Ljava/util/Iterator;
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "([B)",
+            "Ljava/util/Iterator<",
+            "Lkotlin/UByte;",
+            ">;"
+        }
+    .end annotation
+
+    .annotation build Lorg/jetbrains/annotations/NotNull;
+    .end annotation
+
+    .line 1
+    new-instance v0, L뎡땝뒻땥되딤돳뎽딀딅돼땫돛듼뎽뒝됩뒨땣땬뒤땦땜둠딞돰뒘뎸땰될땦듬땭땬두딄딹뎡돠뒝드된땵땱땡딹딸뒛듔뒹디둡딄돸딨돳뒾뒉뎬듸돼돰뒐듬돼둡됐돳둑뒉땟뒀됨뒾땀땥땥돼듬땃된딟딝돵땜딄뒼딞될땄딄딟따땀땄돝될돷딻든땝디땅딹듻돴딐돝둘땄듟도땠딸돤돠땸돳듌뒘뒨든딎딝뒷땧됨딹땣땋;
+
+    .line 2
+    .line 3
+    invoke-direct {v0, p0}, L뎡땝뒻땥되딤돳뎽딀딅돼땫돛듼뎽뒝됩뒨땣땬뒤땦땜둠딞돰뒘뎸땰될땦듬땭땬두딄딹뎡돠뒝드된땵땱땡딹딸뒛듔뒹디둡딄돸딨돳뒾뒉뎬듸돼돰뒐듬돼둡됐돳둑뒉땟뒀됨뒾땀땥땥돼듬땃된딟딝돵땜딄뒼딞될땄딄딟따땀땄돝될돷딻든땝디땅딹듻돴딐돝둘땄듟도땠딸돤돠땸돳듌뒘뒨든딎딝뒷땧됨딹땣땋;-><init>([B)V
+
+    .line 4
+    .line 5
+    .line 6
+    return-object v0
+.end method
+
+.method public static final set-VurrAj0([BIB)V
+    .locals 0
+
+    .line 1
+    aput-byte p2, p0, p1
+
+    .line 2
+    .line 3
+    return-void
+.end method
+
+.method public static toString-impl([B)Ljava/lang/String;
+    .locals 2
+
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    const-string v1, "UByteArray(storage="
+
+    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+
+    invoke-static {p0}, Ljava/util/Arrays;->toString([B)Ljava/lang/String;
+
+    move-result-object p0
+
+    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    const/16 p0, 0x29
+
+    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p0
+
+    return-object p0
+.end method
+
+
+# virtual methods
+.method public bridge synthetic add(Ljava/lang/Object;)Z
+    .locals 1
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public add-7apg3OU(B)Z
+    .locals 1
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public addAll(Ljava/util/Collection;)Z
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Ljava/util/Collection<",
+            "+",
+            "Lkotlin/UByte;",
+            ">;)Z"
+        }
+    .end annotation
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public clear()V
+    .locals 2
+
+    new-instance v0, Ljava/lang/UnsupportedOperationException;
+
+    const-string v1, "Operation is not supported for read-only collection"
+
+    invoke-direct {v0, v1}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw v0
+.end method
+
+.method public final bridge contains(Ljava/lang/Object;)Z
+    .locals 1
+
+    .line 1
+    instance-of v0, p1, Lkotlin/UByte;
+
+    .line 2
+    .line 3
+    if-nez v0, :cond_0
+
+    .line 4
+    .line 5
+    const/4 p1, 0x0
+
+    .line 6
+    return p1
+
+    .line 7
+    :cond_0
+    check-cast p1, Lkotlin/UByte;
+
+    .line 8
+    .line 9
+    invoke-virtual {p1}, Lkotlin/UByte;->unbox-impl()B
+
+    .line 10
+    .line 11
+    .line 12
+    move-result p1
+
+    .line 13
+    invoke-virtual {p0, p1}, Lkotlin/UByteArray;->contains-7apg3OU(B)Z
+
+    .line 14
+    .line 15
+    .line 16
+    move-result p1
+
+    .line 17
+    return p1
+.end method
+
+.method public contains-7apg3OU(B)Z
+    .locals 1
+
+    .line 1
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    invoke-static {v0, p1}, Lkotlin/UByteArray;->contains-7apg3OU([BB)Z
+
+    move-result p1
+
+    return p1
+.end method
+
+.method public containsAll(Ljava/util/Collection;)Z
+    .locals 1
+    .param p1    # Ljava/util/Collection;
+        .annotation build Lorg/jetbrains/annotations/NotNull;
+        .end annotation
+    .end param
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Ljava/util/Collection<",
+            "*>;)Z"
+        }
+    .end annotation
+
+    .line 1
+    const-string v0, "elements"
+
+    .line 2
+    .line 3
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 4
+    .line 5
+    .line 6
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    .line 7
+    .line 8
+    invoke-static {v0, p1}, Lkotlin/UByteArray;->containsAll-impl([BLjava/util/Collection;)Z
+
+    .line 9
+    .line 10
+    .line 11
+    move-result p1
+
+    .line 12
+    return p1
+.end method
+
+.method public equals(Ljava/lang/Object;)Z
+    .locals 1
+
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    invoke-static {v0, p1}, Lkotlin/UByteArray;->equals-impl([BLjava/lang/Object;)Z
+
+    move-result p1
+
+    return p1
+.end method
+
+.method public getSize()I
+    .locals 1
+
+    .line 1
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    .line 2
+    .line 3
+    invoke-static {v0}, Lkotlin/UByteArray;->getSize-impl([B)I
+
+    .line 4
+    .line 5
+    .line 6
+    move-result v0
+
+    .line 7
+    return v0
+.end method
+
+.method public hashCode()I
+    .locals 1
+
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    invoke-static {v0}, Lkotlin/UByteArray;->hashCode-impl([B)I
+
+    move-result v0
+
+    return v0
+.end method
+
+.method public isEmpty()Z
+    .locals 1
+
+    .line 1
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    .line 2
+    .line 3
+    invoke-static {v0}, Lkotlin/UByteArray;->isEmpty-impl([B)Z
+
+    .line 4
+    .line 5
+    .line 6
+    move-result v0
+
+    .line 7
+    return v0
+.end method
+
+.method public iterator()Ljava/util/Iterator;
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "()",
+            "Ljava/util/Iterator<",
+            "Lkotlin/UByte;",
+            ">;"
+        }
+    .end annotation
+
+    .annotation build Lorg/jetbrains/annotations/NotNull;
+    .end annotation
+
+    .line 1
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    .line 2
+    .line 3
+    invoke-static {v0}, Lkotlin/UByteArray;->iterator-impl([B)Ljava/util/Iterator;
+
+    .line 4
+    .line 5
+    .line 6
+    move-result-object v0
+
+    .line 7
+    return-object v0
+.end method
+
+.method public remove(Ljava/lang/Object;)Z
+    .locals 1
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public removeAll(Ljava/util/Collection;)Z
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Ljava/util/Collection<",
+            "*>;)Z"
+        }
+    .end annotation
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public retainAll(Ljava/util/Collection;)Z
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Ljava/util/Collection<",
+            "*>;)Z"
+        }
+    .end annotation
+
+    new-instance p1, Ljava/lang/UnsupportedOperationException;
+
+    const-string v0, "Operation is not supported for read-only collection"
+
+    invoke-direct {p1, v0}, Ljava/lang/UnsupportedOperationException;-><init>(Ljava/lang/String;)V
+
+    throw p1
+.end method
+
+.method public bridge synthetic size()I
+    .locals 1
+
+    .line 1
+    invoke-virtual {p0}, Lkotlin/UByteArray;->getSize()I
+
+    .line 2
+    .line 3
+    .line 4
+    move-result v0
+
+    .line 5
+    return v0
+.end method
+
+.method public toArray()[Ljava/lang/Object;
+    .locals 1
+
+    .line 1
+    invoke-static {p0}, Lkotlin/jvm/internal/CollectionToArray;->toArray(Ljava/util/Collection;)[Ljava/lang/Object;
+
+    move-result-object v0
+
+    return-object v0
+.end method
+
+.method public toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "<T:",
+            "Ljava/lang/Object;",
+            ">([TT;)[TT;"
+        }
+    .end annotation
+
+    .line 2
+    const-string v0, "array"
+
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    invoke-static {p0, p1}, Lkotlin/jvm/internal/CollectionToArray;->toArray(Ljava/util/Collection;[Ljava/lang/Object;)[Ljava/lang/Object;
+
+    move-result-object p1
+
+    return-object p1
+.end method
+
+.method public toString()Ljava/lang/String;
+    .locals 1
+
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    invoke-static {v0}, Lkotlin/UByteArray;->toString-impl([B)Ljava/lang/String;
+
+    move-result-object v0
+
+    return-object v0
+.end method
+
+.method public final synthetic unbox-impl()[B
+    .locals 1
+
+    iget-object v0, p0, Lkotlin/UByteArray;->뎠둠땪듼뎠딅땲둔듽됫딞돰둡딞듼뎨뎨듔땡딝땨땃땀뒻딤딹돝되땳땲딸뒾뎨땱땥돶뒛뒷들뒨땋돠뎡둔된돤든됫딹돳돴돛땍땸뒵둑돳땨땝득땮땠땨딀딄뒨뒀땀땋듽됫딹땵딨뒵듸땵뎬뒻돤땨두듰땫땻뒋돶두땣뎡뎡듐땫땰뒉뎹땩땱둑딄돳듸뒤뎻땮딜땻됨뎸뒼딃됫돸땮땮돨뒨땡땲딨돷되땋둘돠땪뒷뒙땅뎸:[B
+
+    return-object v0
+.end method
