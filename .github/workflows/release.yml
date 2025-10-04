@@ -19,25 +19,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Download Apktool
+      - name: Download Tools
         run: |
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
-
-      - name: Install Signing Tools
-        run: |
-          sudo apt-get update && sudo apt-get install -y apksigner zipalign
+          wget -q https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O uber-apk-signer.jar
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.p12
-
-      - name: Convert Keystore to JKS
-        run: |
-          keytool -importkeystore \
-            -srckeystore release.p12 -srcstoretype PKCS12 -srcstorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -destkeystore release.jks -deststoretype JKS -deststorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -destkeypass "${{ secrets.KEY_PASSWORD }}" -srcalias "${{ secrets.KEY_ALIAS }}" \
-            -destalias "${{ secrets.KEY_ALIAS }}" -noprompt
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
 
       - name: Find App Name
         id: find_app
@@ -68,30 +57,19 @@ jobs:
           echo "✅ Recompile complete: $UNSIGNED_APK"
           echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
 
-      - name: Sign APK with apksigner
+      - name: Sign and Align with uber-apk-signer
         id: sign
         run: |
-          UNSIGNED_APK="${{ steps.recompile.outputs.unsigned_apk_path }}"
-          SIGNED_UNALIGNED_APK="rebuilt_signed_unaligned.apk"
-          echo "🔑 Signing APK with apksigner..."
-          apksigner sign --ks release.jks \
-            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
-            --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
-            --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
-            --out "$SIGNED_UNALIGNED_APK" \
-            "$UNSIGNED_APK"
-          echo "✅ Signing complete: $SIGNED_UNALIGNED_APK"
-          echo "signed_apk_path=$SIGNED_UNALIGNED_APK" >> $GITHUB_OUTPUT
-
-      - name: Zipalign APK
-        id: zipalign
-        run: |
           APP_NAME="${{ steps.find_app.outputs.app_name }}"
-          UNALIGNED_APK="${{ steps.sign.outputs.signed_apk_path }}"
           FINAL_APK="${APP_NAME}_release.apk"
-          echo "📦 Aligning APK..."
-          zipalign -f 4 "$UNALIGNED_APK" "$FINAL_APK"
-          echo "✅ Zipalign complete: $FINAL_APK"
+          java -jar uber-apk-signer.jar \
+            --apks "${{ steps.recompile.outputs.unsigned_apk_path }}" \
+            --ks release.keystore \
+            --ksPass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            --ksAlias "${{ secrets.KEY_ALIAS }}" \
+            --keyPass "${{ secrets.KEY_PASSWORD }}" \
+            --out "$FINAL_APK"
+          echo "✅ Signing and alignment complete: $FINAL_APK"
           echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
@@ -103,8 +81,8 @@ jobs:
             🚀 **${{ steps.find_app.outputs.app_name }}**
 
             - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
-            - Signed with `apksigner` and optimized with `zipalign`.
+            - Signed and aligned with `uber-apk-signer`.
             - Workflow run: ${{ github.run_id }}
-          files: "${{ steps.zipalign.outputs.final_apk_path }}"
+          files: "${{ steps.sign.outputs.final_apk_path }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
