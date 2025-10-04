@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="end" android:orientation="vertical" android:background="@color/background_color" android:layout_width="fill_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="vertical" android:id="@id/color_bg" android:background="@color/colorAccent" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <TextView android:textAppearance="?android:textAppearanceMedium" android:textSize="18.0sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20.0dip" android:layout_marginBottom="20.0dip" android:text="@string/choose_your_favorite_color" android:layout_marginStart="25.0dip" style="@style/Toolbar.SubTitleText" />
+        <View android:background="?android:dividerVertical" android:layout_width="fill_parent" android:layout_height="1.0dip" />
+    </LinearLayout>
+    <ScrollView android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_margin="10.0dip">
+        <LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
+            <org.polaric.md_colorfragment.FillGridView android:gravity="center" android:orientation="vertical" android:id="@id/grid" android:padding="16.0dip" android:clipToPadding="false" android:layout_width="fill_parent" android:layout_height="fill_parent" android:horizontalSpacing="8.0dip" android:verticalSpacing="8.0dip" android:stretchMode="columnWidth" android:columnWidth="56.0dip" android:numColumns="auto_fit" />
+        </LinearLayout>
+    </ScrollView>
+    <RelativeLayout android:gravity="center_vertical" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dip" android:layout_marginBottom="10.0dip">
+        <LinearLayout android:gravity="center" android:id="@id/back" android:padding="10.0dip" android:layout_width="100.0dip" android:layout_height="wrap_content" android:layout_margin="10.0dip" android:layout_marginStart="10.0dip">
+            <TextView android:textColor="@color/colorPrimary" android:layout_gravity="center" android:id="@id/back_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/back" android:letterSpacing="0.1" />
+        </LinearLayout>
+        <androidx.cardview.widget.CardView android:id="@id/apply" android:padding="0.0dip" android:layout_width="150.0dip" android:layout_height="40.0dip" android:layout_margin="10.0dip" android:layout_alignParentEnd="true" app:cardBackgroundColor="@color/colorPrimary" app:cardCornerRadius="20.0dip" app:cardElevation="3.0dip">
+            <TextView android:textColor="@color/white" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/apply" android:layout_alignParentEnd="true" android:letterSpacing="0.1" />
+        </androidx.cardview.widget.CardView>
+    </RelativeLayout>
+</LinearLayout>

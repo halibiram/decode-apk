@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:icon="@drawable/ic_search_black_24dp" android:id="@id/search" android:title="Search" app:actionViewClass="androidx.appcompat.widget.SearchView" app:showAsAction="ifRoom|collapseActionView" />
+    <item android:id="@id/add_custom" android:title="@string/add_custom" />
+    <item android:id="@id/delete_custom" android:title="@string/delete_custom" />
+    <item android:id="@id/paste_custom" android:title="@string/paste_server" />
+</menu>
