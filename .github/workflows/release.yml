@@ -1,67 +1,47 @@
-name: Build and Release APK
+      - name: Recompile APK with Apktool
+        run: |
+          if [ ! -d "output/apktool" ]; then
+            echo "❌ Apktool kaynakları bulunamadı!"
+            exit 1
+          fi
 
-on:
-  workflow_dispatch:
+          echo "🔨 APK yeniden derleniyor..."
+          java -jar apktool.jar b output/apktool -o rebuilt_unsigned.apk
+          echo "✅ Recompile tamamlandı: rebuilt_unsigned.apk"
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+      - name: Sign & Align APK
+        run: |
+          echo "🔑 Test keystore ile imzalanıyor..."
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+          # Keystore varsa yeniden oluşturma
+          if [ ! -f my-release-key.keystore ]; then
+            keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass password -keypass password \
+              -dname "CN=Test, OU=Dev, O=Company, L=City, S=State, C=US"
+          fi
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '11'
+          # Sign
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore my-release-key.keystore \
+            -storepass password -keypass password \
+            rebuilt_unsigned.apk my-key-alias
 
-    - name: Download apktool
-      run: |
-        wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar -O apktool.jar
+          # Zipalign
+          sudo apt-get update && sudo apt-get install -y zipalign
+          zipalign -f 4 rebuilt_unsigned.apk rebuilt_signed.apk
 
-    - name: Decode Keystore
-      run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
+          echo "✅ Sign + zipalign tamamlandı: rebuilt_signed.apk"
 
-    - name: Decompile APK
-      run: |
-        java -jar apktool.jar d FBD_VPN_PROcom.fbd.tunnelv404.apk -o decompiled_output -f
-
-    - name: Build APK
-      run: |
-        java -jar apktool.jar b decompiled_output -o unsigned.apk
-
-    - name: Add apksigner to PATH
-      run: echo "$ANDROID_SDK_ROOT/build-tools/$(ls $ANDROID_SDK_ROOT/build-tools | sort -r | head -n 1)" >> $GITHUB_PATH
-
-    - name: Sign APK
-      run: |
-        apksigner sign \
-          --ks keystore.jks \
-          --ks-key-alias ${{ secrets.KEY_ALIAS }} \
-          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
-          --out signed.apk \
-          unsigned.apk
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./signed.apk
-        asset_name: FBD-VPN-PRO.apk
-        asset_content_type: application/vnd.android.package-archive
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rebuilt-${{ github.run_number }}
+          name: "Rebuilt APK Release #${{ github.run_number }}"
+          body: |
+            🔨 Apktool ile yeniden derlenen ve imzalanan APK.
+            - APK: `rebuilt_signed.apk`
+            - Workflow run: ${{ github.run_id }}
+          files: rebuilt_signed.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
