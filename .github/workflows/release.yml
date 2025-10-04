@@ -36,6 +36,19 @@ jobs:
           echo "✅ Found app: $APP_NAME"
           echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
 
+      - name: Clean up broken resource references
+        run: |
+          APP_NAME="${{ steps.find_app.outputs.app_name }}"
+          PUBLIC_XML_PATH="decompiled/${APP_NAME}/apktool/res/values/public.xml"
+          if [ -f "$PUBLIC_XML_PATH" ]; then
+            echo "🧹 Cleaning $PUBLIC_XML_PATH..."
+            sed -i '/admob_empty_layout/d' "$PUBLIC_XML_PATH"
+            sed -i '/gma_ad_services_config/d' "$PUBLIC_XML_PATH"
+            echo "✅ Clean up complete."
+          else
+            echo "⚠️ public.xml not found, skipping clean up."
+          fi
+
       - name: Recompile APK
         id: recompile
         run: |
