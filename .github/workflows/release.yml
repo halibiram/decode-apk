@@ -23,13 +23,21 @@ jobs:
         run: |
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
 
-      - name: Install Build Tools
+      - name: Install Signing Tools
         run: |
-          sudo apt-get update && sudo apt-get install -y zipalign
+          sudo apt-get update && sudo apt-get install -y apksigner zipalign
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.p12
+
+      - name: Convert Keystore to JKS
+        run: |
+          keytool -importkeystore \
+            -srckeystore release.p12 -srcstoretype PKCS12 -srcstorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -destkeystore release.jks -deststoretype JKS -deststorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -destkeypass "${{ secrets.KEY_PASSWORD }}" -srcalias "${{ secrets.KEY_ALIAS }}" \
+            -destalias "${{ secrets.KEY_ALIAS }}" -noprompt
 
       - name: Find App Name
         id: find_app
@@ -60,21 +68,18 @@ jobs:
           echo "✅ Recompile complete: $UNSIGNED_APK"
           echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
 
-      - name: Sign APK with jarsigner
+      - name: Sign APK with apksigner
         id: sign
         run: |
           UNSIGNED_APK="${{ steps.recompile.outputs.unsigned_apk_path }}"
           SIGNED_UNALIGNED_APK="rebuilt_signed_unaligned.apk"
-
-          # jarsigner signs in-place, so create a copy to preserve the unsigned APK
-          cp "$UNSIGNED_APK" "$SIGNED_UNALIGNED_APK"
-
-          echo "🔑 Signing APK with jarsigner..."
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-            -keystore release.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -keypass "${{ secrets.KEY_PASSWORD }}" \
-            "$SIGNED_UNALIGNED_APK" "${{ secrets.KEY_ALIAS }}"
+          echo "🔑 Signing APK with apksigner..."
+          apksigner sign --ks release.jks \
+            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
+            --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
+            --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
+            --out "$SIGNED_UNALIGNED_APK" \
+            "$UNSIGNED_APK"
           echo "✅ Signing complete: $SIGNED_UNALIGNED_APK"
           echo "signed_apk_path=$SIGNED_UNALIGNED_APK" >> $GITHUB_OUTPUT
 
@@ -98,7 +103,7 @@ jobs:
             🚀 **${{ steps.find_app.outputs.app_name }}**
 
             - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
-            - Signed with `jarsigner` and optimized with `zipalign`.
+            - Signed with `apksigner` and optimized with `zipalign`.
             - Workflow run: ${{ github.run_id }}
           files: "${{ steps.zipalign.outputs.final_apk_path }}"
         env:
