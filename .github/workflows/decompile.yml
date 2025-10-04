@@ -191,28 +191,24 @@ jobs:
             const analysisReport = fs.readFileSync('analysis_report.txt', 'utf8');
             const keyReport = fs.readFileSync('key_search_report.txt', 'utf8');
 
-            const body = `## 📱 APK Decompile İşlemi Tamamlandı
-
-### 📊 Yapı Analizi
-\`\`\`
-${analysisReport}
-\`\`\`
-
-### 🔐 Anahtar Arama Sonuçları
-\`\`\`
-${keyReport}
-\`\`\`
-
-### 📥 İndirme
-Artifacts bölümünden decompile edilmiş kaynak kodları indirebilirsiniz:
-- \`decompiled-sources\`: Tüm kaynak kodlar
-- \`important-files\`: Crypto ve Config dosyaları
-- \`analysis-reports\`: Detaylı raporlar
-
-### 🔍 Sonraki Adımlar
-1. Important files klasöründeki dosyaları inceleyin
-2. Key search report'taki bulguları kontrol edin
-3. SecretKeySpec kullanımlarına bakın`;
+            const body = '## 📱 APK Decompile İşlemi Tamamlandı\n\n' +
+              '### 📊 Yapı Analizi\n' +
+              '```\n' +
+              analysisReport +
+              '\n```\n\n' +
+              '### 🔐 Anahtar Arama Sonuçları\n' +
+              '```\n' +
+              keyReport +
+              '\n```\n\n' +
+              '### 📥 İndirme\n' +
+              'Artifacts bölümünden decompile edilmiş kaynak kodları indirebilirsiniz:\n' +
+              '- `decompiled-sources`: Tüm kaynak kodlar\n' +
+              '- `important-files`: Crypto ve Config dosyaları\n' +
+              '- `analysis-reports`: Detaylı raporlar\n\n' +
+              '### 🔍 Sonraki Adımlar\n' +
+              '1. Important files klasöründeki dosyaları inceleyin\n' +
+              '2. Key search report\'taki bulguları kontrol edin\n' +
+              '3. SecretKeySpec kullanımlarına bakın';
 
             await github.rest.issues.create({
               owner: context.repo.owner,
