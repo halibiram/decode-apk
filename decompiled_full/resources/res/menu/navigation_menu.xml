@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:icon="@drawable/cogs"
+        android:id="@+id/options"
+        android:title="@string/settings"/>
+    <item
+        android:icon="@drawable/ping"
+        android:id="@+id/boosting"
+        android:title="Auto Boosting"/>
+    <item
+        android:icon="@drawable/ic_playstore"
+        android:id="@+id/item_app"
+        android:title="@string/application_link"/>
+    <item
+        android:icon="@drawable/ic_update"
+        android:id="@+id/item_update"
+        android:title="Private Update"/>
+    <item
+        android:icon="@drawable/ic_recon"
+        android:id="@+id/item_iphunt"
+        android:title="IP Hunter"/>
+    <item
+        android:icon="@drawable/ic_update"
+        android:id="@+id/item_checkupdates"
+        android:title="@string/check_updates"/>
+    <item
+        android:icon="@drawable/account_login"
+        android:id="@+id/item_logout"
+        android:title="Logout"/>
+</menu>
