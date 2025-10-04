@@ -1,0 +1,235 @@
+name: Decompile APK with JADX
+
+on:
+  push:
+    paths:
+      - '*.apk'
+  workflow_dispatch:  # Manuel olarak tetiklenebilir
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Repository'yi clone et
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Java'yı kur (JADX için gerekli)
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. JADX'i indir ve kur
+      - name: Download JADX
+        run: |
+          echo "📥 JADX indiriliyor..."
+          wget -q https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
+          unzip -q jadx-1.5.0.zip -d jadx
+          chmod +x jadx/bin/jadx
+          echo "✅ JADX kurulumu tamamlandı"
+
+      # 4. APK dosyasını bul
+      - name: Find APK file
+        id: find_apk
+        run: |
+          APK_FILE=$(find . -maxdepth 1 -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "❌ APK dosyası bulunamadı!"
+            exit 1
+          fi
+          echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
+          echo "apk_name=$(basename $APK_FILE .apk)" >> $GITHUB_OUTPUT
+          echo "📱 Bulunan APK: $APK_FILE"
+
+      # 5. APK'yı decompile et
+      - name: Decompile APK
+        run: |
+          echo "🔧 APK decompile ediliyor..."
+          ./jadx/bin/jadx -d decompiled \
+            --show-bad-code \
+            --no-res \
+            --no-src \
+            ${{ steps.find_apk.outputs.apk_path }}
+
+          # Sadece kaynak kodları al (resources hariç)
+          ./jadx/bin/jadx -d decompiled_full \
+            --show-bad-code \
+            ${{ steps.find_apk.outputs.apk_path }}
+
+          echo "✅ Decompile tamamlandı"
+
+      # 6. Dosya yapısını analiz et
+      - name: Analyze structure
+        run: |
+          echo "📊 Dosya yapısı analizi..."
+          echo ""
+          echo "=== Klasör Yapısı ===" > analysis_report.txt
+          tree -L 4 -d decompiled_full/sources >> analysis_report.txt 2>&1 || \
+            find decompiled_full/sources -type d | head -20 >> analysis_report.txt
+
+          echo "" >> analysis_report.txt
+          echo "=== İstatistikler ===" >> analysis_report.txt
+          echo "Toplam Java dosyası: $(find decompiled_full/sources -name '*.java' | wc -l)" >> analysis_report.txt
+          echo "Toplam klasör: $(find decompiled_full/sources -type d | wc -l)" >> analysis_report.txt
+
+          echo "" >> analysis_report.txt
+          echo "=== Ana Paket ===" >> analysis_report.txt
+          find decompiled_full/sources -type d -maxdepth 3 | head -10 >> analysis_report.txt
+
+          echo "" >> analysis_report.txt
+          echo "=== Crypto İlgili Dosyalar ===" >> analysis_report.txt
+          find decompiled_full/sources -type f \( \
+            -iname "*crypto*.java" -o \
+            -iname "*cipher*.java" -o \
+            -iname "*encrypt*.java" -o \
+            -iname "*decrypt*.java" -o \
+            -iname "*aes*.java" \
+          \) >> analysis_report.txt
+
+          echo "" >> analysis_report.txt
+          echo "=== Config İlgili Dosyalar ===" >> analysis_report.txt
+          find decompiled_full/sources -type f \( \
+            -iname "*config*.java" -o \
+            -iname "*server*.java" \
+          \) >> analysis_report.txt
+
+          cat analysis_report.txt
+
+      # 7. Şifreleme anahtarı ara
+      - name: Search for encryption keys
+        run: |
+          echo "🔍 Şifreleme anahtarı aranıyor..." > key_search_report.txt
+          echo "" >> key_search_report.txt
+
+          echo "=== SecretKeySpec Kullanımı ===" >> key_search_report.txt
+          grep -r "SecretKeySpec" decompiled_full/sources --include="*.java" -B 3 -A 3 >> key_search_report.txt 2>&1 || echo "Bulunamadı" >> key_search_report.txt
+
+          echo "" >> key_search_report.txt
+          echo "=== String Sabitleri (16+ karakter) ===" >> key_search_report.txt
+          grep -r "String.*=.*\"[A-Za-z0-9_]\{16,\}\"" decompiled_full/sources --include="*.java" >> key_search_report.txt 2>&1 || echo "Bulunamadı" >> key_search_report.txt
+
+          echo "" >> key_search_report.txt
+          echo "=== Byte Array Sabitleri ===" >> key_search_report.txt
+          grep -r "byte\[\].*=.*{" decompiled_full/sources --include="*.java" | grep "0x" | head -20 >> key_search_report.txt 2>&1 || echo "Bulunamadı" >> key_search_report.txt
+
+          echo "" >> key_search_report.txt
+          echo "=== AES Cipher getInstance ===" >> key_search_report.txt
+          grep -r "Cipher.getInstance" decompiled_full/sources --include="*.java" -B 2 -A 2 >> key_search_report.txt 2>&1 || echo "Bulunamadı" >> key_search_report.txt
+
+          cat key_search_report.txt
+
+      # 8. Önemli dosyaları kopyala
+      - name: Copy important files
+        run: |
+          mkdir -p important_files
+
+          # Crypto dosyaları
+          find decompiled_full/sources -type f \( \
+            -iname "*crypto*.java" -o \
+            -iname "*cipher*.java" -o \
+            -iname "*encrypt*.java" \
+          \) -exec cp {} important_files/ \; 2>/dev/null || true
+
+          # Config dosyaları
+          find decompiled_full/sources -type f \( \
+            -iname "*config*.java" -o \
+            -iname "*server*.java" \
+          \) -exec cp {} important_files/ \; 2>/dev/null || true
+
+          # MainActivity
+          find decompiled_full/sources -name "MainActivity.java" -exec cp {} important_files/ \; 2>/dev/null || true
+
+          echo "📁 Önemli dosyalar important_files/ klasörüne kopyalandı"
+          ls -lh important_files/
+
+      # 9. Sonuçları artifact olarak yükle
+      - name: Upload decompiled sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: decompiled-sources-${{ steps.find_apk.outputs.apk_name }}
+          path: decompiled_full/sources/
+          retention-days: 30
+
+      - name: Upload important files
+        uses: actions/upload-artifact@v4
+        with:
+          name: important-files-${{ steps.find_apk.outputs.apk_name }}
+          path: important_files/
+          retention-days: 30
+
+      - name: Upload analysis reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-reports-${{ steps.find_apk.outputs.apk_name }}
+          path: |
+            analysis_report.txt
+            key_search_report.txt
+          retention-days: 30
+
+      # 10. Sonuçları commit et (opsiyonel)
+      - name: Commit results
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Sadece raporları commit et (kaynak kod çok büyük olabilir)
+          git add analysis_report.txt key_search_report.txt
+          git commit -m "📊 APK Analysis Report - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+          git push || echo "Push failed"
+
+      # 11. Issue oluştur (bulguları raporla)
+      - name: Create issue with findings
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysisReport = fs.readFileSync('analysis_report.txt', 'utf8');
+            const keyReport = fs.readFileSync('key_search_report.txt', 'utf8');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔍 APK Decompile Sonuçları - ' + new Date().toISOString().split('T')[0],
+              body: `## 📱 APK Decompile İşlemi Tamamlandı
+
+### 📊 Yapı Analizi
+\`\`\`
+${analysisReport}
+\`\`\`
+
+### 🔐 Anahtar Arama Sonuçları
+\`\`\`
+${keyReport}
+\`\`\`
+
+### 📥 İndirme
+Artifacts bölümünden decompile edilmiş kaynak kodları indirebilirsiniz:
+- \`decompiled-sources\`: Tüm kaynak kodlar
+- \`important-files\`: Crypto ve Config dosyaları
+- \`analysis-reports\`: Detaylı raporlar
+
+### 🔍 Sonraki Adımlar
+1. Important files klasöründeki dosyaları inceleyin
+2. Key search report'taki bulguları kontrol edin
+3. SecretKeySpec kullanımlarına bakın`
+            });
+
+      # 12. Özet çıktı
+      - name: Summary
+        run: |
+          echo "## 🎉 Decompile İşlemi Tamamlandı!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 İstatistikler" >> $GITHUB_STEP_SUMMARY
+          echo "- **Toplam Java dosyası:** $(find decompiled_full/sources -name '*.java' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Crypto dosyası:** $(find important_files -name '*.java' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Actions > Artifacts bölümünden indirin:" >> $GITHUB_STEP_SUMMARY
+          echo "- decompiled-sources (Tam kaynak kod)" >> $GITHUB_STEP_SUMMARY
+          echo "- important-files (Kritik dosyalar)" >> $GITHUB_STEP_SUMMARY
+          echo "- analysis-reports (Analiz raporları)" >> $GITHUB_STEP_SUMMARY
