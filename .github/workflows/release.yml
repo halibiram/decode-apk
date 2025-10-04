@@ -89,6 +89,11 @@ jobs:
           echo "✅ Signing and alignment complete: $FINAL_APK"
           echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
+      - name: Verify Artifact Before Release
+        run: |
+          echo "Verifying artifact exists before release..."
+          ls -lR
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
