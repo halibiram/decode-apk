@@ -45,11 +45,11 @@ public class LauncherActivity extends MainBaseActivity {
         ConfigUtil.getInstance(this).hasAccount();
         ((ImageView) findViewById(R.id.splash_logo)).setVisibility(0);
         new Handler(Looper.getMainLooper()).postDelayed(new RunnableC0450xb2a4f6ac(this, 20), 1000L);
-        JSONObject jSONObject = getJSONObject();
-        if (jSONObject == null) {
-            return;
-        }
         try {
+            JSONObject jSONObject = getJSONObject();
+            if (jSONObject == null) {
+                return;
+            }
             if (jSONObject.has(new ObfuscatedString(new long[]{-2017195689399632879L, 7742294430067533688L, 8538469283823232509L}).toString())) {
                 this.old = VPNUtil.decrypt(jSONObject.getString(new ObfuscatedString(new long[]{-2595215104679103379L, 1283968930201616911L, -2064370058526795270L}).toString()));
             }
@@ -78,13 +78,17 @@ public class LauncherActivity extends MainBaseActivity {
                     this.editor.putInt(new ObfuscatedString(new long[]{2744249942787864625L, 8815041697581356966L, 2479799184658690771L}).toString(), Color.parseColor(new ObfuscatedString(new long[]{-4414834587214863320L, 1353973375892610184L}).toString())).apply();
                 }
             }
-        } catch (JSONException unused) {
+        } catch (Exception unused) {
         }
     }
 
     @Override // androidx.fragment.app.FragmentActivity, android.app.Activity
     public void onResume() {
-        loadAppColors(this.myPrefs.getInt(new ObfuscatedString(new long[]{5532664611836283392L, -1622027504457045341L, -6323404030823856357L}).toString(), Color.parseColor(new ObfuscatedString(new long[]{3295418465343647402L, -3434089927446697467L}).toString())));
+        try {
+            loadAppColors(this.myPrefs.getInt(new ObfuscatedString(new long[]{5532664611836283392L, -1622027504457045341L, -6323404030823856357L}).toString(), Color.parseColor(new ObfuscatedString(new long[]{3295418465343647402L, -3434089927446697467L}).toString())));
+        } catch (Exception unused) {
+            loadAppColors(Color.parseColor("#ff01264e"));
+        }
         super.onResume();
     }
 }
