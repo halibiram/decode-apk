@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu
-  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:icon="@drawable/ic_update" android:enabled="true" android:id="@id/telegram" android:title="Telegram Group" app:showAsAction="ifRoom" />
-    <item android:icon="@drawable/ic_update" android:enabled="true" android:id="@id/item_import_config" android:title="@string/private_update" app:showAsAction="ifRoom" />
-    <item android:icon="@drawable/ic_delete" android:enabled="true" android:id="@id/item_restore_custom" android:title="@string/custom" app:showAsAction="ifRoom" />
-    <item android:icon="@drawable/ic_delete" android:enabled="true" android:id="@id/item_restore_default" android:title="@string/clear_data" app:showAsAction="ifRoom" />
-    <item android:icon="@drawable/ic_delete" android:enabled="true" android:id="@id/item_restart" android:title="@string/restart" app:showAsAction="ifRoom" />
-</menu>
