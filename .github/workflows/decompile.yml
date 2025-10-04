@@ -190,33 +190,25 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const analysisReport = fs.readFileSync('analysis_report.txt', 'utf8');
-            const keyReport = fs.readFileSync('key_search_report.txt', 'utf8');
-
             const body = '## 📱 APK Decompile İşlemi Tamamlandı\n\n' +
-              '### 📊 Yapı Analizi\n' +
-              '```\n' +
-              analysisReport +
-              '\n```\n\n' +
-              '### 🔐 Anahtar Arama Sonuçları\n' +
-              '```\n' +
-              keyReport +
-              '\n```\n\n' +
-              '### 📥 İndirme\n' +
-              'Artifacts bölümünden decompile edilmiş kaynak kodları indirebilirsiniz:\n' +
-              '- `decompiled-sources`: Tüm kaynak kodlar\n' +
-              '- `important-files`: Crypto ve Config dosyaları\n' +
-              '- `analysis-reports`: Detaylı raporlar\n\n' +
+              '### 📊 Analiz Raporları Çok Büyük\n' +
+              "Analiz ve anahtar arama raporları, bir GitHub Issue'suna sığamayacak kadar büyük.\n\n" +
+              '### 📥 Raporları İndirme\n' +
+              "Raporların tamamını bu iş akışı çalıştırmasının **Artifacts** bölümünden indirebilirsiniz.\n\n" +
+              "Artifacts'a gitmek için:\n" +
+              '1. Bu reponun "Actions" sekmesine gidin.\n' +
+              '2. Sol kenar çubuğundan "Decompile APK with JADX" iş akışını seçin.\n' +
+              '3. En son çalıştırmayı bulun ve tıklayın.\n' +
+              '4. "Artifacts" bölümünü göreceksiniz. Oradan `analysis-reports`, `important-files`, ve `decompiled-sources` indirebilirsiniz.\n\n' +
               '### 🔍 Sonraki Adımlar\n' +
-              '1. Important files klasöründeki dosyaları inceleyin\n' +
-              '2. Key search report\'taki bulguları kontrol edin\n' +
-              '3. SecretKeySpec kullanımlarına bakın';
+              '1. `important-files` klasöründeki dosyaları inceleyin.\n' +
+              '2. `analysis-reports` içindeki raporları kontrol edin.\n' +
+              "3. Raporlardaki `SecretKeySpec` kullanımlarına bakın.";
 
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🔍 APK Decompile Sonuçları - ' + new Date().toISOString().split('T')[0],
+              title: "🔍 APK Decompile Sonuçları (Raporlar Artifacts'te)",
               body: body
             });
 
