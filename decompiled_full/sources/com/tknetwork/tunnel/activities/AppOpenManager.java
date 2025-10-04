@@ -9,16 +9,16 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
-import com.google.android.gms.ads.AdError;
+/*import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.appopen.AppOpenAd;
+import com.google.android.gms.ads.appopen.AppOpenAd;*/
 import com.panda912.muddy.ObfuscatedString;
 
 /* loaded from: classes3.dex */
-public class AppOpenManager implements LifecycleObserver, Application.ActivityLifecycleCallbacks {
-    private static String AD_UNIT_ID;
+public class AppOpenManager /*implements LifecycleObserver, Application.ActivityLifecycleCallbacks*/ {
+    /*private static String AD_UNIT_ID;
     private static final String LOG_TAG = new ObfuscatedString(new long[]{7825163482951535420L, 2761192844274173780L, -372350265589180191L}).toString();
     private static boolean isShowingAds = false;
     private AppOpenAd appOpenAd = null;
@@ -133,5 +133,5 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
             return;
         }
         fetchAd();
-    }
+    }*/
 }
