@@ -191,11 +191,7 @@ jobs:
             const analysisReport = fs.readFileSync('analysis_report.txt', 'utf8');
             const keyReport = fs.readFileSync('key_search_report.txt', 'utf8');
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🔍 APK Decompile Sonuçları - ' + new Date().toISOString().split('T')[0],
-              body: `## 📱 APK Decompile İşlemi Tamamlandı
+            const body = `## 📱 APK Decompile İşlemi Tamamlandı
 
 ### 📊 Yapı Analizi
 \`\`\`
@@ -216,7 +212,13 @@ Artifacts bölümünden decompile edilmiş kaynak kodları indirebilirsiniz:
 ### 🔍 Sonraki Adımlar
 1. Important files klasöründeki dosyaları inceleyin
 2. Key search report'taki bulguları kontrol edin
-3. SecretKeySpec kullanımlarına bakın`
+3. SecretKeySpec kullanımlarına bakın`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔍 APK Decompile Sonuçları - ' + new Date().toISOString().split('T')[0],
+              body: body
             });
 
       # 12. Özet çıktı
