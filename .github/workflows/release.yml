@@ -81,8 +81,7 @@ jobs:
       - name: Sign and Align with Debug Key
         id: sign
         run: |
-          APP_NAME="${{ steps.find_app.outputs.app_name }}"
-          FINAL_APK="${APP_NAME}_debug_release.apk"
+          FINAL_APK="REBUILT_APPLICATION.apk"
           echo "🔑 Signing and aligning with uber-apk-signer's debug key..."
           java -jar uber-apk-signer.jar \
             --apks "${{ steps.recompile.outputs.unsigned_apk_path }}" \
@@ -100,7 +99,7 @@ jobs:
 
             - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
             - Signed with a debug key using `uber-apk-signer`.
-            - This is **not** a production release.
+            - The main artifact is `REBUILT_APPLICATION.apk`.
             - Workflow run: ${{ github.run_id }}
           files: "${{ steps.sign.outputs.final_apk_path }}"
         env:
