@@ -25,9 +25,13 @@ jobs:
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
 
+    - name: Decompile APK
+      run: |
+        java -jar apktool.jar d FBD_VPN_PROcom.fbd.tunnelv404.apk -o decompiled_output -f
+
     - name: Build APK
       run: |
-        java -jar apktool.jar b decompiled_full -o unsigned.apk
+        java -jar apktool.jar b decompiled_output -o unsigned.apk
 
     - name: Add apksigner to PATH
       run: echo "$ANDROID_SDK_ROOT/build-tools/$(ls $ANDROID_SDK_ROOT/build-tools | sort -r | head -n 1)" >> $GITHUB_PATH
