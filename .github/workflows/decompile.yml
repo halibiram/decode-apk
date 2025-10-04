@@ -9,6 +9,9 @@ on:
 jobs:
   decompile:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: write
 
     steps:
       # 1. Repository'yi clone et
