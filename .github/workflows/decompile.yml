@@ -179,10 +179,20 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Sadece raporları commit et (kaynak kod çok büyük olabilir)
-          git add analysis_report.txt key_search_report.txt
-          git commit -m "📊 APK Analysis Report - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
-          git push || echo "Push failed"
+          echo "📝 Decompile edilmiş dosyalar ve raporlar commit için hazırlanıyor..."
+          git add decompiled_full/
+          git add analysis_report.txt
+          git add key_search_report.txt
+
+          # Commit edilecek bir değişiklik olup olmadığını kontrol et
+          if git diff-index --quiet HEAD --; then
+            echo "✅ Commit edilecek yeni dosya bulunamadı."
+          else
+            echo "💾 Değişiklikler commit ediliyor..."
+            git commit -m "feat: Decompile APK and commit all files" -m "Adds all decompiled source code and analysis reports for ${{ steps.find_apk.outputs.apk_name }}.apk"
+            echo "🚀 Değişiklikler push ediliyor..."
+            git push
+          fi
 
       # 11. Issue oluştur (bulguları raporla)
       - name: Create issue with findings
