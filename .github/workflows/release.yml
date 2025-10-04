@@ -1,4 +1,4 @@
-name: Recompile, Sign, and Release APK
+name: Recompile, Sign, and Release APK (Test Build)
 
 on:
   workflow_dispatch:
@@ -24,10 +24,23 @@ jobs:
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
           wget -q https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O uber-apk-signer.jar
 
-      - name: Recompile APK from output/apktool
+      - name: Find App Name
+        id: find_app
+        run: |
+          APP_DIR=$(find decompiled -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            echo "❌ No app directory found under 'decompiled/'"
+            exit 1
+          fi
+          APP_NAME=$(basename "$APP_DIR")
+          echo "✅ Found app: $APP_NAME"
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Recompile APK
         id: recompile
         run: |
-          SOURCE_DIR="output/apktool"
+          APP_NAME="${{ steps.find_app.outputs.app_name }}"
+          SOURCE_DIR="decompiled/${APP_NAME}/apktool"
           UNSIGNED_APK="rebuilt_unsigned.apk"
 
           if [ ! -d "$SOURCE_DIR" ]; then
@@ -43,25 +56,26 @@ jobs:
       - name: Sign and Align with Debug Key
         id: sign
         run: |
-          UNSIGNED_APK="${{ steps.recompile.outputs.unsigned_apk_path }}"
-          SIGNED_APK="rebuilt_signed.apk"
+          APP_NAME="${{ steps.find_app.outputs.app_name }}"
+          FINAL_APK="${APP_NAME}_debug_release.apk"
           echo "🔑 Signing and aligning with uber-apk-signer's debug key..."
           java -jar uber-apk-signer.jar \
-            --apks "$UNSIGNED_APK" \
-            --out "$SIGNED_APK"
-          echo "✅ Signing and alignment complete: $SIGNED_APK"
-          echo "final_apk_path=$SIGNED_APK" >> $GITHUB_OUTPUT
+            --apks "${{ steps.recompile.outputs.unsigned_apk_path }}" \
+            --out "$FINAL_APK"
+          echo "✅ Signing and alignment complete: $FINAL_APK"
+          echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.run_number }}
-          name: "Rebuilt APK Release #${{ github.run_number }}"
+          tag_name: test-release-${{ steps.find_app.outputs.app_name }}-${{ github.run_number }}
+          name: "Test Release ${{ steps.find_app.outputs.app_name }} #${{ github.run_number }} (Debug Signed)"
           body: |
-            📦 **Rebuilt APK**
+            🧪 **${{ steps.find_app.outputs.app_name }} (Debug Build)**
 
-            - Recompiled from `output/apktool`.
+            - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
             - Signed with a debug key using `uber-apk-signer`.
+            - This is **not** a production release.
             - Workflow run: ${{ github.run_id }}
           files: "${{ steps.sign.outputs.final_apk_path }}"
         env:
