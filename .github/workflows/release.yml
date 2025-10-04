@@ -38,13 +38,13 @@ jobs:
 
     - name: Sign APK
       run: |
-        apksigner sign --ks keystore.jks \
+        apksigner sign \
+          --ks keystore.jks \
           --ks-key-alias ${{ secrets.KEY_ALIAS }} \
           --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
           --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+          --out signed.apk \
           unsigned.apk
-
-        mv unsigned.apk signed.apk
 
     - name: Create Release
       id: create_release
