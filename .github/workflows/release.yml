@@ -39,14 +39,26 @@ jobs:
       - name: Clean up broken resource references
         run: |
           APP_NAME="${{ steps.find_app.outputs.app_name }}"
+
+          # Clean public.xml
           PUBLIC_XML_PATH="decompiled/${APP_NAME}/apktool/res/values/public.xml"
           if [ -f "$PUBLIC_XML_PATH" ]; then
             echo "🧹 Cleaning $PUBLIC_XML_PATH..."
             sed -i '/admob_empty_layout/d' "$PUBLIC_XML_PATH"
             sed -i '/gma_ad_services_config/d' "$PUBLIC_XML_PATH"
-            echo "✅ Clean up complete."
+            echo "✅ Cleaned public.xml."
           else
-            echo "⚠️ public.xml not found, skipping clean up."
+            echo "⚠️ public.xml not found, skipping."
+          fi
+
+          # Clean AndroidManifest.xml
+          MANIFEST_PATH="decompiled/${APP_NAME}/apktool/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            echo "🧹 Cleaning $MANIFEST_PATH..."
+            sed -i '/gma_ad_services_config/d' "$MANIFEST_PATH"
+            echo "✅ Cleaned AndroidManifest.xml."
+          else
+            echo "⚠️ AndroidManifest.xml not found, skipping."
           fi
 
       - name: Recompile APK
