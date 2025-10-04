@@ -1,47 +1,91 @@
-      - name: Recompile APK with Apktool
+name: Recompile, Sign, and Release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'The name of the app to build from the decompiled directory'
+        required: true
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download Apktool
         run: |
-          if [ ! -d "output/apktool" ]; then
-            echo "❌ Apktool kaynakları bulunamadı!"
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+
+      - name: Install Signing Tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y apksigner zipalign
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+
+      - name: Recompile APK
+        id: recompile
+        run: |
+          APP_NAME="${{ github.event.inputs.app_name }}"
+          SOURCE_DIR="decompiled/${APP_NAME}/apktool"
+          UNSIGNED_APK="rebuilt_unsigned.apk"
+
+          if [ ! -d "$SOURCE_DIR" ]; then
+            echo "❌ Source directory not found: $SOURCE_DIR"
             exit 1
           fi
 
-          echo "🔨 APK yeniden derleniyor..."
-          java -jar apktool.jar b output/apktool -o rebuilt_unsigned.apk
-          echo "✅ Recompile tamamlandı: rebuilt_unsigned.apk"
+          echo "🔨 Recompiling APK from $SOURCE_DIR..."
+          java -jar apktool.jar b "$SOURCE_DIR" -o "$UNSIGNED_APK"
+          echo "✅ Recompile complete: $UNSIGNED_APK"
+          echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
 
-      - name: Sign & Align APK
+      - name: Sign APK
+        id: sign
         run: |
-          echo "🔑 Test keystore ile imzalanıyor..."
+          SIGNED_APK="rebuilt_signed_not_aligned.apk"
+          echo "🔑 Signing APK..."
+          apksigner sign --ks release.keystore \
+            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
+            --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
+            --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
+            --out "$SIGNED_APK" \
+            "${{ steps.recompile.outputs.unsigned_apk_path }}"
+          echo "✅ Signing complete: $SIGNED_APK"
+          echo "signed_apk_path=$SIGNED_APK" >> $GITHUB_OUTPUT
 
-          # Keystore varsa yeniden oluşturma
-          if [ ! -f my-release-key.keystore ]; then
-            keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass password -keypass password \
-              -dname "CN=Test, OU=Dev, O=Company, L=City, S=State, C=US"
-          fi
-
-          # Sign
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore my-release-key.keystore \
-            -storepass password -keypass password \
-            rebuilt_unsigned.apk my-key-alias
-
-          # Zipalign
-          sudo apt-get update && sudo apt-get install -y zipalign
-          zipalign -f 4 rebuilt_unsigned.apk rebuilt_signed.apk
-
-          echo "✅ Sign + zipalign tamamlandı: rebuilt_signed.apk"
+      - name: Zipalign APK
+        id: zipalign
+        run: |
+          FINAL_APK="${{ github.event.inputs.app_name }}_release.apk"
+          echo "📦 Aligning APK..."
+          zipalign -f 4 "${{ steps.sign.outputs.signed_apk_path }}" "$FINAL_APK"
+          echo "✅ Zipalign complete: $FINAL_APK"
+          echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: rebuilt-${{ github.run_number }}
-          name: "Rebuilt APK Release #${{ github.run_number }}"
+          tag_name: release-${{ github.event.inputs.app_name }}-${{ github.run_number }}
+          name: "Release ${{ github.event.inputs.app_name }} #${{ github.run_number }}"
           body: |
-            🔨 Apktool ile yeniden derlenen ve imzalanan APK.
-            - APK: `rebuilt_signed.apk`
+            🚀 **${{ github.event.inputs.app_name }}**
+
+            - Recompiled from `decompiled/${{ github.event.inputs.app_name }}/apktool`
+            - Signed with release key.
             - Workflow run: ${{ github.run_id }}
-          files: rebuilt_signed.apk
+          files: "${{ steps.zipalign.outputs.final_apk_path }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
