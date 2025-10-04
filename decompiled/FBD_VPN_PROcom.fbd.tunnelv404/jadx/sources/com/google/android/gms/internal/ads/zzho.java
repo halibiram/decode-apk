@@ -1,0 +1,11 @@
+package com.google.android.gms.internal.ads;
+
+import com.panda912.muddy.ObfuscatedString;
+import java.io.IOException;
+
+/* loaded from: classes2.dex */
+public final class zzho extends zzhp {
+    public zzho(IOException iOException, zzhb zzhbVar) {
+        super(new ObfuscatedString(new long[]{2329237265988817084L, -1222074150318667976L, 7864658501182531429L, 615899901450437074L, -4532896967014533997L, 7963036351457331550L, 7143269795015818233L, 8069423177312451829L, 1408565447609687874L, -3022096977269116598L, 6777585397700552385L, -4834955042957868260L, -2233603231207286090L, -9011623118407902180L, -1499912481683220943L, -8404320801156405645L, 3155777244180327815L}).toString(), iOException, zzhbVar, 2007, 1);
+    }
+}
