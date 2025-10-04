@@ -23,9 +23,9 @@ jobs:
         run: |
           wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
 
-      - name: Install Signing Tools
+      - name: Install Build Tools
         run: |
-          sudo apt-get update && sudo apt-get install -y apksigner zipalign
+          sudo apt-get update && sudo apt-get install -y zipalign
 
       - name: Decode Keystore
         run: |
@@ -60,27 +60,32 @@ jobs:
           echo "✅ Recompile complete: $UNSIGNED_APK"
           echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
 
-      - name: Sign APK
+      - name: Sign APK with jarsigner
         id: sign
         run: |
-          SIGNED_APK="rebuilt_signed_not_aligned.apk"
-          echo "🔑 Signing APK..."
-          apksigner sign --ks release.keystore \
-            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
-            --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
-            --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
-            --out "$SIGNED_APK" \
-            "${{ steps.recompile.outputs.unsigned_apk_path }}"
-          echo "✅ Signing complete: $SIGNED_APK"
-          echo "signed_apk_path=$SIGNED_APK" >> $GITHUB_OUTPUT
+          UNSIGNED_APK="${{ steps.recompile.outputs.unsigned_apk_path }}"
+          SIGNED_UNALIGNED_APK="rebuilt_signed_unaligned.apk"
+
+          # jarsigner signs in-place, so create a copy to preserve the unsigned APK
+          cp "$UNSIGNED_APK" "$SIGNED_UNALIGNED_APK"
+
+          echo "🔑 Signing APK with jarsigner..."
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore release.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.KEY_PASSWORD }}" \
+            "$SIGNED_UNALIGNED_APK" "${{ secrets.KEY_ALIAS }}"
+          echo "✅ Signing complete: $SIGNED_UNALIGNED_APK"
+          echo "signed_apk_path=$SIGNED_UNALIGNED_APK" >> $GITHUB_OUTPUT
 
       - name: Zipalign APK
         id: zipalign
         run: |
           APP_NAME="${{ steps.find_app.outputs.app_name }}"
+          UNALIGNED_APK="${{ steps.sign.outputs.signed_apk_path }}"
           FINAL_APK="${APP_NAME}_release.apk"
           echo "📦 Aligning APK..."
-          zipalign -f 4 "${{ steps.sign.outputs.signed_apk_path }}" "$FINAL_APK"
+          zipalign -f 4 "$UNALIGNED_APK" "$FINAL_APK"
           echo "✅ Zipalign complete: $FINAL_APK"
           echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
 
@@ -93,7 +98,7 @@ jobs:
             🚀 **${{ steps.find_app.outputs.app_name }}**
 
             - Recompiled from `decompiled/${{ steps.find_app.outputs.app_name }}/apktool`
-            - Signed with release key.
+            - Signed with `jarsigner` and optimized with `zipalign`.
             - Workflow run: ${{ github.run_id }}
           files: "${{ steps.zipalign.outputs.final_apk_path }}"
         env:
