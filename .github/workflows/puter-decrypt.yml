@@ -293,7 +293,7 @@ jobs:
 
           html = html.replace('SERVERS_JSON_DATA', JSON.stringify(serversJson));
           html = html.replace('KEY_SEARCH_REPORT_DATA', JSON.stringify(keySearchReport));
-          html = html.replace('AI_MODEL', JSON.stringify(aiModel));
+          html = html.replace(/AI_MODEL/g, JSON.stringify(aiModel));
 
           fs.writeFileSync('decrypt_ready.html', html);
 
