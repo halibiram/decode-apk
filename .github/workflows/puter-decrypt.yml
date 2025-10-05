@@ -1,0 +1,489 @@
+# .github/workflows/puter-decrypt.yml
+name: Puter.js Free AI - Auto Decrypt
+
+on:
+  push:
+    paths:
+      - 'servers.json'
+      - 'Servers.js'
+      - 'key_search_report.txt'
+  workflow_dispatch:
+    inputs:
+      ai_model:
+        description: 'AI Model to use'
+        required: false
+        default: 'gpt-4o'
+        type: choice
+        options:
+          - gpt-4o
+          - gpt-4.1
+          - o1-mini
+          - o3-mini
+          - claude-sonnet-4.5
+          - gemini-2.0-flash
+
+jobs:
+  decrypt-with-puter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install pycryptodome requests
+
+      - name: Find server file and prepare analysis
+        id: prepare_files
+        run: |
+          mkdir -p analysis_output
+
+          SERVER_FILE_NAME=""
+          if [ -f "servers.json" ]; then
+            SERVER_FILE_NAME="servers.json"
+          elif [ -f "Servers.js" ]; then
+            SERVER_FILE_NAME="Servers.js"
+          fi
+
+          if [ -z "$SERVER_FILE_NAME" ]; then
+            echo "❌ No server file found (checked for servers.json, Servers.js)."
+            exit 1
+          fi
+
+          echo "✅ Server file found: $SERVER_FILE_NAME"
+          echo "SERVER_FILE_NAME=$SERVER_FILE_NAME" >> $GITHUB_ENV
+
+          # Extract JSON data from the file
+          if [[ "$SERVER_FILE_NAME" == *.js ]]; then
+            # Extract the array from the JS file, handling potential 'var servers = ' prefix
+            sed 's/.*= *//' "$SERVER_FILE_NAME" > analysis_output/servers.json
+          else
+            # Assume it's already JSON
+            cp "$SERVER_FILE_NAME" analysis_output/servers.json
+          fi
+
+          echo "📊 Extracted server data:"
+          cat analysis_output/servers.json | jq '.' || cat analysis_output/servers.json
+
+          if [ -f "key_search_report.txt" ]; then
+            echo "✅ key_search_report.txt found"
+            cp key_search_report.txt analysis_output/key_search_report.txt
+            head -n 20 analysis_output/key_search_report.txt
+          else
+            echo "⚠️  key_search_report.txt not found (optional)"
+            echo "No key search report provided" > analysis_output/key_search_report.txt
+          fi
+
+      - name: Create Puter.js decryptor
+        run: |
+          cat > decrypt_with_puter.html << 'HTML_EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <title>Puter.js AI Decryptor</title>
+              <script src="https://js.puter.com/v2/"></script>
+          </head>
+          <body>
+              <h1>🤖 AI-Powered Config Decryptor</h1>
+              <div id="status">Initializing...</div>
+              <pre id="output"></pre>
+
+              <script>
+              (async function() {
+                  const statusDiv = document.getElementById('status');
+                  const outputDiv = document.getElementById('output');
+
+                  function log(msg) {
+                      console.log(msg);
+                      outputDiv.textContent += msg + '\n';
+                  }
+
+                  function updateStatus(msg) {
+                      statusDiv.textContent = msg;
+                      log('📊 ' + msg);
+                  }
+
+                  try {
+                      updateStatus('Loading configuration files...');
+
+                      // Read servers.json and key_search_report.txt
+                      // In GitHub Actions, these will be injected via environment
+                      const serversJson = SERVERS_JSON_DATA;
+                      const keySearchReport = KEY_SEARCH_REPORT_DATA;
+
+                      updateStatus('Creating AI analysis prompt...');
+
+                      const prompt = `
+          # AUTONOMOUS DECRYPTION MISSION
+
+          You are an expert cryptanalyst. Analyze these files and decrypt the configuration.
+
+          ## INPUT DATA:
+
+          ### servers.json:
+          \`\`\`json
+          ${JSON.stringify(serversJson, null, 2)}
+          \`\`\`
+
+          ### key_search_report.txt:
+          \`\`\`
+          ${keySearchReport}
+          \`\`\`
+
+          ## YOUR TASKS:
+
+          1. **FIND ENCRYPTION KEY** from key_search_report.txt
+             - Look for strings like: "ocean2024", "secret", "password", etc.
+             - Extract ALL potential keys (4-32 characters)
+             - Prioritize alphanumeric strings
+
+          2. **IDENTIFY ALGORITHM** from key_search_report.txt
+             - Find mentions of: AES, DES, RSA, CBC, ECB, SHA-256, MD5
+             - Determine cipher mode and padding
+             - Identify IV strategy
+
+          3. **TEST SYSTEMATICALLY**
+             For each key candidate, try:
+             - SHA-256(key) + IV from first 16 bytes
+             - MD5(key) + IV from first 16 bytes
+             - Direct key + IV from data
+             - Zero IV + hashed key
+
+          4. **DECRYPT ALL FIELDS**
+             - SNIHost values (all variants)
+             - Payload values (OpenVPN configs)
+             - Squid proxy values
+
+          5. **PROVIDE WORKING CODE**
+             - Python decryption script
+             - JavaScript implementation
+             - Ready to use immediately
+
+          ## OUTPUT FORMAT (JSON ONLY):
+
+          Return ONLY valid JSON in this exact format:
+          {
+            "success": true,
+            "key_found": "actual_key_here",
+            "key_source": "line X in key_search_report",
+            "algorithm": {
+              "cipher": "AES-256-CBC",
+              "key_derivation": "SHA-256",
+              "iv_strategy": "first_16_bytes",
+              "padding": "PKCS7"
+            },
+            "decrypted_fields": {
+              "snihost_1": "decrypted_domain",
+              "snihost_2": "decrypted_domain",
+              "payload_1": "OpenVPN config...",
+              "squid_1": "proxy:port"
+            },
+            "python_code": "complete working script",
+            "javascript_code": "complete working script",
+            "confidence": 95
+          }
+
+          CRITICAL: Return ONLY the JSON, no markdown, no explanations.
+          `;
+
+                      updateStatus('Sending to AI for analysis...');
+                      log('🚀 Using model: ' + AI_MODEL);
+
+                      const response = await puter.ai.chat(prompt, {
+                          model: AI_MODEL,
+                          temperature: 0.1,
+                          max_tokens: 8000
+                      });
+
+                      log('📥 Received AI response');
+                      log('Response length: ' + response.length + ' chars');
+
+                      updateStatus('Parsing AI response...');
+
+                      // Extract JSON from response
+                      let jsonResult;
+                      try {
+                          // Try direct parse
+                          jsonResult = JSON.parse(response);
+                      } catch (e) {
+                          // Try to extract JSON from markdown
+                          const jsonMatch = response.match(/\`\`\`json\s*([\s\S]*?)\`\`\`/) ||
+                                          response.match(/\`\`\`\s*([\s\S]*?)\`\`\`/) ||
+                                          response.match(/\{[\s\S]*\}/);
+
+                          if (jsonMatch) {
+                              jsonResult = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+                          } else {
+                              throw new Error('No JSON found in response');
+                          }
+                      }
+
+                      updateStatus('✅ Analysis complete!');
+
+                      log('\n' + '='.repeat(60));
+                      log('🔑 KEY FOUND: ' + jsonResult.key_found);
+                      log('📍 Source: ' + jsonResult.key_source);
+                      log('🔐 Algorithm: ' + jsonResult.algorithm.cipher);
+                      log('✨ Confidence: ' + jsonResult.confidence + '%');
+                      log('='.repeat(60));
+
+                      // Save results
+                      window.DECRYPTION_RESULTS = jsonResult;
+
+                      // Display decrypted fields
+                      log('\n📦 DECRYPTED FIELDS:\n');
+                      for (const [key, value] of Object.entries(jsonResult.decrypted_fields)) {
+                          log(`${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+                      }
+
+                      // Signal completion to Node.js
+                      console.log('PUTER_RESULTS_START');
+                      console.log(JSON.stringify(jsonResult, null, 2));
+                      console.log('PUTER_RESULTS_END');
+
+                      updateStatus('✅ Complete! Results saved.');
+
+                  } catch (error) {
+                      updateStatus('❌ Error: ' + error.message);
+                      log('Error details: ' + error.stack);
+                      console.error('PUTER_ERROR:', error);
+                  }
+              })();
+              </script>
+          </body>
+          </html>
+          HTML_EOF
+
+          echo "✅ Puter.js decryptor created"
+
+      - name: Create Node.js runner
+        run: |
+          cat > run_puter.js << 'JS_EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          console.log('🚀 Puter.js AI Decryptor Runner');
+          console.log('='.repeat(60));
+
+          // Read input files from the analysis directory
+          const serversJson = JSON.parse(fs.readFileSync('analysis_output/servers.json', 'utf8'));
+          const keySearchReport = fs.readFileSync('analysis_output/key_search_report.txt', 'utf8');
+
+          const aiModel = process.env.AI_MODEL || 'gpt-4o';
+          const serverFileName = process.env.SERVER_FILE_NAME || 'servers.json';
+
+          console.log(`📊 Servers to decrypt from ${serverFileName}: ${serversJson.length}`);
+          console.log(`🤖 AI Model: ${aiModel}`);
+          console.log('');
+
+          // Inject data into HTML
+          let html = fs.readFileSync('decrypt_with_puter.html', 'utf8');
+
+          // Dynamically update the filename in the prompt
+          html = html.replace(
+              /### servers\.json:/,
+              `### Server Configuration (${serverFileName}):`
+          );
+
+          html = html.replace('SERVERS_JSON_DATA', JSON.stringify(serversJson));
+          html = html.replace('KEY_SEARCH_REPORT_DATA', JSON.stringify(keySearchReport));
+          html = html.replace('AI_MODEL', JSON.stringify(aiModel));
+
+          fs.writeFileSync('decrypt_ready.html', html);
+
+          console.log('✅ HTML prepared with data');
+          console.log('📄 File: decrypt_ready.html');
+          console.log('⚠️  NOTE: This requires a browser environment. For GitHub Actions, we will use puppeteer.');
+          console.log('');
+
+          // Save for manual testing
+          console.log('✅ Ready for execution');
+          process.exit(0);
+          JS_EOF
+
+          node run_puter.js
+
+      - name: Install Puppeteer
+        run: |
+          npm install puppeteer
+
+      - name: Run Puter.js with Puppeteer
+        run: |
+          cat > run_puppeteer.js << 'JS_EOF'
+          const puppeteer = require('puppeteer');
+          const fs = require('fs');
+
+          (async () => {
+              console.log('🌐 Launching headless browser...');
+
+              const browser = await puppeteer.launch({
+                  headless: 'new',
+                  args: ['--no-sandbox', '--disable-setuid-sandbox']
+              });
+
+              const page = await browser.newPage();
+
+              // Capture console logs
+              const logs = [];
+              page.on('console', msg => {
+                  const text = msg.text();
+                  console.log('Browser:', text);
+                  logs.push(text);
+              });
+
+              // Navigate to our HTML file
+              const htmlPath = 'file://' + process.cwd() + '/decrypt_ready.html';
+              console.log('📄 Loading:', htmlPath);
+
+              await page.goto(htmlPath, { waitUntil: 'networkidle0' });
+
+              // Wait for results (max 5 minutes)
+              console.log('⏳ Waiting for AI analysis...');
+
+              let results = null;
+              const timeout = 300000; // 5 minutes
+              const start = Date.now();
+
+              while (!results && (Date.now() - start) < timeout) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+
+                  // Check for results in logs
+                  const startIdx = logs.findIndex(l => l === 'PUTER_RESULTS_START');
+                  const endIdx = logs.findIndex(l => l === 'PUTER_RESULTS_END');
+
+                  if (startIdx !== -1 && endIdx !== -1) {
+                      const jsonLines = logs.slice(startIdx + 1, endIdx);
+                      const jsonText = jsonLines.join('\n');
+
+                      try {
+                          results = JSON.parse(jsonText);
+                          console.log('✅ Results received!');
+                      } catch (e) {
+                          console.error('❌ Failed to parse results:', e.message);
+                      }
+                      break;
+                  }
+
+                  // Check for errors
+                  const errorLog = logs.find(l => l.startsWith('PUTER_ERROR:'));
+                  if (errorLog) {
+                      console.error('❌ Puter.js error:', errorLog);
+                      break;
+                  }
+              }
+
+              await browser.close();
+
+              if (results) {
+                  // Save results
+                  fs.writeFileSync('analysis_output/puter_results.json',
+                      JSON.stringify(results, null, 2));
+
+                  // Save Python script
+                  if (results.python_code) {
+                      fs.writeFileSync('analysis_output/decrypt_auto.py', results.python_code);
+                      fs.chmodSync('analysis_output/decrypt_auto.py', '755');
+                  }
+
+                  // Save JavaScript script
+                  if (results.javascript_code) {
+                      fs.writeFileSync('analysis_output/decrypt_auto.js', results.javascript_code);
+                  }
+
+                  // Save decrypted fields
+                  if (results.decrypted_fields) {
+                      fs.writeFileSync('analysis_output/decrypted_fields.json',
+                          JSON.stringify(results.decrypted_fields, null, 2));
+                  }
+
+                  console.log('');
+                  console.log('='.repeat(60));
+                  console.log('✅ DECRYPTION COMPLETE');
+                  console.log('='.repeat(60));
+                  console.log('🔑 Key:', results.key_found);
+                  console.log('🔐 Algorithm:', results.algorithm.cipher);
+                  console.log('✨ Confidence:', results.confidence + '%');
+                  console.log('📁 Files saved to: analysis_output/');
+                  console.log('='.repeat(60));
+
+                  process.exit(0);
+              } else {
+                  console.error('❌ No results received within timeout');
+                  process.exit(1);
+              }
+          })();
+          JS_EOF
+
+          node run_puppeteer.js
+
+      - name: Verify results
+        run: |
+          if [ -f "analysis_output/puter_results.json" ]; then
+            echo "✅ Analysis complete"
+            cat analysis_output/puter_results.json | jq '.'
+          else
+            echo "❌ No results found"
+            exit 1
+          fi
+
+      - name: Run Python decryption script
+        if: success()
+        run: |
+          if [ -f "analysis_output/decrypt_auto.py" ]; then
+            echo "🐍 Running auto-generated Python script..."
+            python analysis_output/decrypt_auto.py
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: puter-decryption-results
+          path: |
+            analysis_output/
+            decrypt_ready.html
+          retention-days: 90
+
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## 🤖 Puter.js Free AI Decryption" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "analysis_output/puter_results.json" ]; then
+            KEY=$(jq -r '.key_found // "NOT FOUND"' analysis_output/puter_results.json)
+            CONF=$(jq -r '.confidence // 0' analysis_output/puter_results.json)
+            MODEL="${{ github.event.inputs.ai_model || 'gpt-4o' }}"
+
+            echo "### ✅ Success!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **AI Model:** $MODEL" >> $GITHUB_STEP_SUMMARY
+            echo "- **Key Found:** \`$KEY\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Confidence:** $CONF%" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cost:** 💰 FREE (Puter.js)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            echo "### 🔓 Decrypted Fields" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            jq '.decrypted_fields' analysis_output/puter_results.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Analysis Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Check logs for details" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 Download full results from Artifacts" >> $GITHUB_STEP_SUMMARY
