@@ -65,22 +65,57 @@ jobs:
           echo "✅ Server file found: $SERVER_FILE_NAME"
           echo "SERVER_FILE_NAME=$SERVER_FILE_NAME" >> $GITHUB_ENV
 
-          # Extract JSON data from the file
-          if [[ "$SERVER_FILE_NAME" == *.js ]]; then
-            # Extract the array from the JS file, handling potential 'var servers = ' prefix
-            sed 's/.*= *//' "$SERVER_FILE_NAME" > analysis_output/servers.json
+          # The Servers.js file is malformed JSON (unescaped newlines in strings).
+          # Other files might be a JSON object containing a "Servers" array, or just the array itself.
+          # This step normalizes the input into a clean 'analysis_output/servers.json' which is always an array.
+
+          if [[ "$SERVER_FILE_NAME" == "Servers.js" ]]; then
+            echo "Sanitizing malformed JSON from Servers.js..."
+            # Use a Node.js script to fix unescaped newlines and extract the "Servers" array.
+            cat > sanitize_json.js << 'JS_EOF'
+            const fs = require('fs');
+            const filePath = process.argv[2];
+            const outputPath = process.argv[3];
+            let content = fs.readFileSync(filePath, 'utf8');
+            let sanitizedContent = '';
+            let inString = false;
+            for (let i = 0; i < content.length; i++) {
+                const char = content[i];
+                if (char === '"' && (i === 0 || content[i-1] !== '\\')) {
+                    inString = !inString;
+                }
+                if (inString && char === '\n') {
+                    sanitizedContent += '\\n';
+                } else {
+                    sanitizedContent += char;
+                }
+            }
+            const jsonObject = JSON.parse(sanitizedContent);
+            const serversArray = jsonObject.Servers || jsonObject;
+            fs.writeFileSync(outputPath, JSON.stringify(serversArray, null, 2));
+            JS_EOF
+            node sanitize_json.js "$SERVER_FILE_NAME" analysis_output/servers.json
           else
-            # Assume it's already JSON
-            cp "$SERVER_FILE_NAME" analysis_output/servers.json
+            # Handle servers.json or other well-formed JSON files.
+            # Check if it's an object with a 'Servers' key or just an array.
+            if jq -e '.Servers' "$SERVER_FILE_NAME" > /dev/null 2>&1; then
+               echo "Extracting .Servers array from $SERVER_FILE_NAME..."
+               jq '.Servers' "$SERVER_FILE_NAME" > analysis_output/servers.json
+            else
+               echo "Assuming $SERVER_FILE_NAME is already a JSON array..."
+               jq '.' "$SERVER_FILE_NAME" > analysis_output/servers.json
+            fi
           fi
 
-          echo "📊 Extracted server data:"
-          cat analysis_output/servers.json | jq '.' || cat analysis_output/servers.json
+          echo "📊 Validating and displaying extracted server data:"
+          if ! jq '.' analysis_output/servers.json; then
+            echo "❌ Failed to produce valid JSON in analysis_output/servers.json"
+            exit 1
+          fi
 
           if [ -f "key_search_report.txt" ]; then
             echo "✅ key_search_report.txt found"
             cp key_search_report.txt analysis_output/key_search_report.txt
-            head -n 20 analysis_output/key_search_report.txt
           else
             echo "⚠️  key_search_report.txt not found (optional)"
             echo "No key search report provided" > analysis_output/key_search_report.txt
