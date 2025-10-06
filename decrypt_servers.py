@@ -1,105 +1,79 @@
-import hashlib
+import json
 from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from Crypto.Util.Padding import unpad
 import base64
-import json
-import sys
 
-def deobfuscate_string(s):
-    """
-    Performs character substitution on the decrypted string based on the
-    logic discovered in the Java source.
-    1 <-> 7
-    2 <-> 8
-    3 <-> 9
-    """
-    s = s.replace('1', '*').replace('7', '1').replace('*', '7')
-    s = s.replace('2', '*').replace('8', '2').replace('*', '8')
-    s = s.replace('3', '*').replace('9', '3').replace('*', '9')
-    return s
+def decrypt_value(encrypted_base64_str):
+    if not encrypted_base64_str or not isinstance(encrypted_base64_str, str):
+        return encrypted_base64_str
 
-def decrypt_value(password, encrypted_base64_value):
-    """
-    Decrypts a single Base64 encoded value using AES/CBC/PKCS7Padding
-    and then applies character de-obfuscation.
-    Now includes error printing for debugging.
-    """
     try:
-        key = hashlib.sha256(password.encode('utf-8')).digest()
-        iv = bytes([0] * 16)
+        # Pre-process the string
+        processed_str = encrypted_base64_str.replace('p', '=').replace('l', '/')
 
-        # The data might not be perfectly padded for Base64, so add padding if needed.
-        missing_padding = len(encrypted_base64_value) % 4
-        if missing_padding != 0:
-            encrypted_base64_value += '=' * (4 - missing_padding)
+        # The key is the SHA-256 hash of "DexterEskalarte2024"
+        key_str = "DexterEskalarte2024"
+        key = SHA256.new(key_str.encode()).digest()
 
-        encrypted_data = base64.b64decode(encrypted_base64_value)
+        # The IV is a static, all-zero 16-byte value
+        iv = b'\x00' * 16
 
+        # Decode the base64 string
+        encrypted_data = base64.b64decode(processed_str)
+
+        # Create the cipher object and decrypt
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_padded = cipher.decrypt(encrypted_data)
+        decrypted_padded_data = cipher.decrypt(encrypted_data)
 
-        decrypted = unpad(decrypted_padded, AES.block_size)
+        # Unpad the data
+        decrypted_data = unpad(decrypted_padded_data, AES.block_size)
 
-        decrypted_str = decrypted.decode('utf-8', errors='ignore')
+        return decrypted_data.decode('utf-8', errors='ignore')
+    except (ValueError, KeyError, base64.binascii.Error, IndexError) as e:
+        # Return original value if decryption fails
+        return encrypted_base64_str
 
-        deobfuscated_str = deobfuscate_string(decrypted_str)
+# Read the server configuration file
+with open('Servers.js', 'r') as f:
+    # The file is not a standard JSON, it's a JS object.
+    # Read the whole file and remove the initial part if it's not a valid JSON start.
+    content = f.read()
+    # A simple way to handle this is to find the first '{' and last '}'
+    start = content.find('{')
+    end = content.rfind('}') + 1
+    json_content = content[start:end]
+    config_data = json.loads(json_content)
 
-        return deobfuscated_str
-    except (ValueError, TypeError, base64.binascii.Error) as e:
-        # This will catch errors from b64decode or unpad, which are expected for non-encrypted strings.
-        # We can ignore these and return the original value.
-        return encrypted_base64_value
-    except Exception as e:
-        # Print other unexpected errors for debugging, but still return the original value.
-        print(f"Unexpected error decrypting '{encrypted_base64_value[:30]}...': {e}", file=sys.stderr)
-        return encrypted_base64_value
+# Fields to decrypt
+fields_to_decrypt = [
+    "ServerIPHost", "ServerCloudFrontHost", "ServerHTTPHost", "ServerUser", "ServerPass",
+    "etServerAddress", "etEndpoint", "etPublicKey", "etPrivateKey", "etPreSharedKey",
+    "etAllowedIPs", "SNIHost", "Payload", "Squid", "config_url", "account_api"
+]
 
-def decrypt_recursive(data, password):
-    """
-    Recursively traverses the JSON data (dicts, lists) and decrypts all string values.
-    """
-    if isinstance(data, dict):
-        new_dict = {}
-        for k, v in data.items():
-            new_dict[k] = decrypt_recursive(v, password)
-        return new_dict
-    elif isinstance(data, list):
-        new_list = []
-        for item in data:
-            new_list.append(decrypt_recursive(item, password))
-        return new_list
-    elif isinstance(data, str):
-        return decrypt_value(password, data)
-    else:
-        return data
+# Decrypt servers
+if 'Servers' in config_data and config_data['Servers']:
+    for server in config_data['Servers']:
+        for field in fields_to_decrypt:
+            if field in server:
+                server[field] = decrypt_value(server[field])
 
-def main():
-    password = "DexterEskalarte2024"
-    print(f"[*] Using Password: {password}")
+# Decrypt networks
+if 'Networks' in config_data and config_data['Networks']:
+    for network in config_data['Networks']:
+        for field in fields_to_decrypt:
+            if field in network:
+                network[field] = decrypt_value(network[field])
 
-    try:
-        with open('Servers.js', 'r', encoding='utf-8') as f:
-            js_content = f.read()
-    except FileNotFoundError:
-        print("\n[!] Error: Servers.js not found.", file=sys.stderr)
-        return
+# Decrypt top-level config_url and account_api
+if 'config_url' in config_data:
+    config_data['config_url'] = decrypt_value(config_data['config_url'])
+if 'account_api' in config_data:
+    config_data['account_api'] = decrypt_value(config_data['account_api'])
 
-    try:
-        data = json.loads(js_content)
-    except json.JSONDecodeError as e:
-        print(f"\n[!] Error decoding JSON from Servers.js: {e}", file=sys.stderr)
-        return
+# Save the decrypted configuration
+with open('decrypted_servers.json', 'w') as f:
+    json.dump(config_data, f, indent=2)
 
-    print("\n--- Decrypting Full Configuration (with error logging) ---")
-    decrypted_data = decrypt_recursive(data, password)
-
-    output_filename = "decrypted_servers_full.json"
-    with open(output_filename, 'w', encoding='utf-8') as f:
-        json.dump(decrypted_data, f, indent=4, ensure_ascii=False)
-
-    print(f"\n[*] Successfully processed the configuration.")
-    print(f"[*] Full results saved to {output_filename}")
-
-
-if __name__ == "__main__":
-    main()
+print("Decryption complete. Decrypted data saved to decrypted_servers.json")
