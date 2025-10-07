@@ -77,7 +77,7 @@ class JulesAPIClient {
         sourceContext: {
           source: sourceName,
           githubRepoContext: {
-            startingBranch: 'main'
+            startingBranch: 'master'
           }
         },
         title: title,
