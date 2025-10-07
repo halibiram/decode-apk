@@ -86,11 +86,7 @@ class JulesAPIClient {
 
       const response = await this.client.post('/sessions', payload);
 
-      console.log('Session created:', {
-        sessionId: response.data.id,
-        name: response.data.name,
-        title: response.data.title
-      });
+      console.log('Session created:', response.data);
 
       return response.data;
     } catch (error) {
