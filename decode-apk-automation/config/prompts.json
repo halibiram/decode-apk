@@ -1,0 +1,22 @@
+{
+  "systemPrompts": {
+    "decryption": "You are an expert cryptanalyst. Analyze and decrypt text systematically.",
+    "verification": "Verify if the decrypted text is meaningful and complete.",
+    "errorAnalysis": "Analyze decryption errors and suggest solutions."
+  },
+  "retryStrategies": {
+    "maxRetries": 3,
+    "backoffMs": [5000, 10000, 20000],
+    "alternativeApproaches": [
+      "Try base64 decode first",
+      "Look for XOR patterns",
+      "Check for multi-layer encoding",
+      "Search for decryption keys in code"
+    ]
+  },
+  "validationRules": {
+    "minTextLength": 3,
+    "allowedCharacters": "^[\\x20-\\x7E\\s]+$",
+    "forbiddenPatterns": ["\\x00", "\\xFF", "===$"]
+  }
+}
