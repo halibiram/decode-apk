@@ -1,0 +1,80 @@
+name: Decompile APK with JADX & Apktool
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '*.apk'
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download JADX
+        run: |
+          wget -q https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
+          unzip -q jadx-1.5.0.zip -d jadx
+          chmod +x jadx/bin/jadx
+
+      - name: Download Apktool
+        run: |
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+          echo "java -jar $(pwd)/apktool.jar \"\$@\"" > apktool
+          chmod +x apktool
+
+      - name: Find APK file
+        id: find_apk
+        run: |
+          APK_FILE=$(find . -maxdepth 1 -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "❌ APK bulunamadı!"
+            exit 1
+          fi
+          echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
+          echo "apk_name=$(basename $APK_FILE .apk)" >> $GITHUB_OUTPUT
+
+      - name: Decompile with JADX
+        run: |
+          ./jadx/bin/jadx -d decompiled_jadx \
+            --show-bad-code \
+            ${{ steps.find_apk.outputs.apk_path }}
+
+      - name: Decompile with Apktool
+        run: |
+          ./apktool d ${{ steps.find_apk.outputs.apk_path }} -o decompiled_apktool -f
+
+      - name: Commit Decompiled Files to Master
+        run: |
+          APK_NAME="${{ steps.find_apk.outputs.apk_name }}"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Decompile klasörlerini temizle ve güncel sonuçları taşı
+          mkdir -p decompiled/${APK_NAME}
+          rm -rf decompiled/${APK_NAME}/jadx
+          rm -rf decompiled/${APK_NAME}/apktool
+          mv decompiled_jadx decompiled/${APK_NAME}/jadx
+          mv decompiled_apktool decompiled/${APK_NAME}/apktool
+
+          git add decompiled/${APK_NAME}
+          if git diff --cached --quiet; then
+            echo "✅ Yeni değişiklik yok, commit yapılmadı."
+          else
+            git commit -m "chore: Update decompiled files for ${APK_NAME}" \
+                        -m "JADX + Apktool çıktıları güncellendi."
+            git push origin master
+            echo "🚀 Decompiled dosyalar master'a push edildi."
+          fi

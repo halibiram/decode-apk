@@ -1,0 +1,89 @@
+name: Recompile, Sign, and Push APK to Master
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # We need to fetch all history to be able to push
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download Tools
+        run: |
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+          wget -q https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O uber-apk-signer.jar
+
+      - name: Find App Name
+        id: find_app
+        run: |
+          APP_DIR=$(find decompiled -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            echo "❌ No app directory found under 'decompiled/'"
+            exit 1
+          fi
+          APP_NAME=$(basename "$APP_DIR")
+          echo "✅ Found app: $APP_NAME"
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Clean up broken resource references
+        run: |
+          APP_NAME="${{ steps.find_app.outputs.app_name }}"
+
+          PUBLIC_XML_PATH="decompiled/${APP_NAME}/apktool/res/values/public.xml"
+          if [ -f "$PUBLIC_XML_PATH" ]; then
+            sed -i '/admob_empty_layout/d' "$PUBLIC_XML_PATH"
+            sed -i '/gma_ad_services_config/d' "$PUBLIC_XML_PATH"
+          fi
+
+          MANIFEST_PATH="decompiled/${APP_NAME}/apktool/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/gma_ad_services_config/d' "$MANIFEST_PATH"
+          fi
+
+      - name: Recompile APK
+        id: recompile
+        run: |
+          APP_NAME="${{ steps.find_app.outputs.app_name }}"
+          SOURCE_DIR="decompiled/${APP_NAME}/apktool"
+          UNSIGNED_APK="rebuilt_unsigned.apk"
+          java -jar apktool.jar b "$SOURCE_DIR" -o "$UNSIGNED_APK"
+          echo "unsigned_apk_path=$UNSIGNED_APK" >> $GITHUB_OUTPUT
+
+      - name: Sign and Align with Debug Key
+        id: sign
+        run: |
+          FINAL_APK="REBUILT_APPLICATION.apk"
+          java -jar uber-apk-signer.jar \
+            --apks "${{ steps.recompile.outputs.unsigned_apk_path }}" \
+            --out "$FINAL_APK"
+          echo "final_apk_path=$FINAL_APK" >> $GITHUB_OUTPUT
+
+      - name: Push APK to Master
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Create a directory for the builds
+          mkdir -p builds
+
+          # Move the APK to the builds directory
+          mv "${{ steps.sign.outputs.final_apk_path }}" builds/
+
+          # Add, commit, and push the new APK
+          git add builds/REBUILT_APPLICATION.apk
+          git commit -m "build: Add recompiled APK from workflow run ${{ github.run_number }}"
+          git push origin master

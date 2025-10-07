@@ -1,0 +1,403 @@
+name: APK Decompile & Analysis
+
+on:
+  push:
+    paths:
+      - '**.apk'
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: 'APK download URL (optional)'
+        required: false
+      analysis_type:
+        description: 'Analysis type'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - crypto
+          - network
+          - config
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          # APKTool
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+          echo '#!/bin/bash' > apktool
+          echo 'java -jar apktool.jar "$@"' >> apktool
+          chmod +x apktool
+          sudo mv apktool /usr/local/bin/
+          sudo mv apktool.jar /usr/local/bin/
+
+          # JADX
+          wget https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
+          unzip jadx-1.5.0.zip -d jadx
+          sudo mv jadx /opt/
+          sudo ln -s /opt/jadx/bin/jadx /usr/local/bin/jadx
+
+          # Python tools
+          pip install pycryptodome requests beautifulsoup4 lxml
+
+      - name: Download APK (if URL provided)
+        if: github.event.inputs.apk_url != ''
+        run: |
+          wget "${{ github.event.inputs.apk_url }}" -O target.apk
+
+      - name: Find APK files
+        id: find_apk
+        run: |
+          if [ -f "target.apk" ]; then
+            echo "apk_file=target.apk" >> $GITHUB_OUTPUT
+          else
+            APK_FILE=$(find . -name "*.apk" -type f | head -n 1)
+            if [ -z "$APK_FILE" ]; then
+              echo "No APK file found!"
+              exit 1
+            fi
+            echo "apk_file=$APK_FILE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Decompile APK with APKTool
+        run: |
+          mkdir -p output/apktool
+          apktool d "${{ steps.find_apk.outputs.apk_file }}" -o output/apktool -f
+
+      - name: Decompile APK with JADX
+        run: |
+          mkdir -p output/jadx
+          jadx "${{ steps.find_apk.outputs.apk_file }}" -d output/jadx --show-bad-code
+
+      - name: Extract APK Info
+        run: |
+          unzip -q "${{ steps.find_apk.outputs.apk_file }}" -d output/extracted
+
+      - name: Analyze - Find Encryption
+        run: |
+          cat > analyze_crypto.py << 'EOF'
+          import os
+          import re
+          import json
+
+          def find_crypto_code(root_dir):
+              results = {
+                  "encryption_methods": [],
+                  "keys_found": [],
+                  "cipher_usage": [],
+                  "suspicious_strings": []
+              }
+
+              crypto_patterns = {
+                  "cipher": r'Cipher\.getInstance\s*\(\s*["\']([^"\']+)["\']',
+                  "key_spec": r'SecretKeySpec\s*\(\s*([^,]+),\s*["\']([^"\']+)["\']',
+                  "iv_spec": r'IvParameterSpec\s*\(\s*([^)]+)\)',
+                  "message_digest": r'MessageDigest\.getInstance\s*\(\s*["\']([^"\']+)["\']',
+                  "key_strings": r'(?i)(key|secret|password|token|api[_-]?key)\s*[:=]\s*["\']([^"\']{8,})["\']',
+                  "base64": r'Base64\.(encode|decode)',
+              }
+
+              for root, dirs, files in os.walk(root_dir):
+                  for file in files:
+                      if file.endswith('.java') or file.endswith('.smali'):
+                          filepath = os.path.join(root, file)
+                          try:
+                              with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                                  content = f.read()
+
+                                  # Find cipher usage
+                                  for match in re.finditer(crypto_patterns['cipher'], content):
+                                      results["cipher_usage"].append({
+                                          "file": filepath.replace(root_dir, ''),
+                                          "algorithm": match.group(1)
+                                      })
+
+                                  # Find keys
+                                  for match in re.finditer(crypto_patterns['key_strings'], content):
+                                      results["keys_found"].append({
+                                          "file": filepath.replace(root_dir, ''),
+                                          "type": match.group(1),
+                                          "value": match.group(2)
+                                      })
+
+                                  # Find encryption methods
+                                  if 'encrypt' in content.lower() or 'decrypt' in content.lower():
+                                      methods = re.findall(r'(public|private|protected)\s+\w+\s+(encrypt|decrypt)\w*\s*\([^)]*\)', content, re.IGNORECASE)
+                                      if methods:
+                                          results["encryption_methods"].append({
+                                              "file": filepath.replace(root_dir, ''),
+                                              "methods": [m[1] for m in methods]
+                                          })
+                          except Exception as e:
+                              pass
+
+              return results
+
+          if __name__ == "__main__":
+              results = find_crypto_code("output/jadx")
+
+              with open("output/crypto_analysis.json", "w") as f:
+                  json.dump(results, f, indent=2)
+
+              print("\n=== CRYPTO ANALYSIS RESULTS ===\n")
+              print(f"Cipher Algorithms Found: {len(results['cipher_usage'])}")
+              print(f"Keys/Secrets Found: {len(results['keys_found'])}")
+              print(f"Encryption Methods: {len(results['encryption_methods'])}")
+
+              if results['keys_found']:
+                  print("\n=== KEYS FOUND ===")
+                  for key in results['keys_found'][:10]:
+                      print(f"  {key['type']}: {key['value'][:50]}... ({key['file']})")
+          EOF
+
+          python analyze_crypto.py
+
+      - name: Analyze - Find Network Endpoints
+        run: |
+          cat > analyze_network.py << 'EOF'
+          import os
+          import re
+          import json
+
+          def find_network_code(root_dir):
+              results = {
+                  "urls": [],
+                  "domains": [],
+                  "api_endpoints": [],
+                  "headers": []
+              }
+
+              patterns = {
+                  "url": r'https?://[^\s"\'\)]+',
+                  "domain": r'(?:http[s]?://)?([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',
+                  "header": r'\.(?:addHeader|setHeader|header)\s*\(\s*["\']([^"\']+)["\'],\s*["\']([^"\']+)["\']',
+              }
+
+              for root, dirs, files in os.walk(root_dir):
+                  for file in files:
+                      if file.endswith('.java'):
+                          filepath = os.path.join(root, file)
+                          try:
+                              with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                                  content = f.read()
+
+                                  # Find URLs
+                                  for match in re.finditer(patterns['url'], content):
+                                      url = match.group(0)
+                                      if url not in results['urls']:
+                                          results['urls'].append({
+                                              "url": url,
+                                              "file": filepath.replace(root_dir, '')
+                                          })
+
+                                  # Find headers
+                                  for match in re.finditer(patterns['header'], content):
+                                      results['headers'].append({
+                                              "name": match.group(1),
+                                              "value": match.group(2),
+                                              "file": filepath.replace(root_dir, '')
+                                          })
+                          except Exception as e:
+                              pass
+
+              return results
+
+          if __name__ == "__main__":
+              results = find_network_code("output/jadx")
+
+              with open("output/network_analysis.json", "w") as f:
+                  json.dump(results, f, indent=2)
+
+              print("\n=== NETWORK ANALYSIS RESULTS ===\n")
+              print(f"URLs Found: {len(results['urls'])}")
+              print(f"Headers Found: {len(results['headers'])}")
+
+              if results['urls']:
+                  print("\n=== URLS ===")
+                  for url_data in results['urls'][:15]:
+                      print(f"  {url_data['url']}")
+          EOF
+
+          python analyze_network.py
+
+      - name: Analyze - Extract Strings
+        run: |
+          strings output/extracted/classes*.dex | grep -E "(http|key|secret|password|token|api)" | sort -u > output/interesting_strings.txt || true
+          head -n 50 output/interesting_strings.txt
+
+      - name: Find Config Files
+        run: |
+          find output/jadx -type f \( -name "*config*" -o -name "*Config*" -o -name "*settings*" -o -name "*Settings*" \) > output/config_files.txt
+          echo "=== CONFIG FILES ==="
+          cat output/config_files.txt
+
+      - name: Generate Analysis Report
+        run: |
+          cat > output/ANALYSIS_REPORT.md << 'EOF'
+          # APK Analysis Report
+
+          Generated: $(date)
+          APK: ${{ steps.find_apk.outputs.apk_file }}
+
+          ## 📁 Output Structure
+          - `apktool/` - APKTool decompiled resources
+          - `jadx/` - JADX decompiled Java source
+          - `extracted/` - Raw APK contents
+
+          ## 🔐 Crypto Analysis
+          See: `crypto_analysis.json`
+
+          ## 🌐 Network Analysis
+          See: `network_analysis.json`
+
+          ## 📝 Config Files
+          See: `config_files.txt`
+
+          ## 🔍 Interesting Strings
+          See: `interesting_strings.txt`
+
+          ## 📊 Quick Stats
+          EOF
+
+          echo "- Java files: $(find output/jadx -name '*.java' | wc -l)" >> output/ANALYSIS_REPORT.md
+          echo "- Total files: $(find output/jadx -type f | wc -l)" >> output/ANALYSIS_REPORT.md
+          echo "- URLs found: $(jq '.urls | length' output/network_analysis.json)" >> output/ANALYSIS_REPORT.md
+          echo "- Keys found: $(jq '.keys_found | length' output/crypto_analysis.json)" >> output/ANALYSIS_REPORT.md
+
+          cat output/ANALYSIS_REPORT.md
+
+      - name: Create Decryption Script
+        run: |
+          cat > output/decrypt_config.py << 'EOF'
+          #!/usr/bin/env python3
+          """
+          Auto-generated decryption script based on APK analysis
+          """
+
+          from Crypto.Cipher import AES
+          from Crypto.Hash import SHA256
+          import base64
+          import json
+
+          def sha256_hash(text):
+              return SHA256.new(text.encode('utf-8')).digest()
+
+          def decrypt_aes_cbc(encrypted_b64, key_string):
+              """
+              Method 1: IV from first 16 bytes + SHA256 key
+              """
+              try:
+                  key = sha256_hash(key_string)
+                  encrypted_data = base64.b64decode(encrypted_b64)
+
+                  iv = encrypted_data[:16]
+                  ciphertext = encrypted_data[16:]
+
+                  cipher = AES.new(key, AES.MODE_CBC, iv)
+                  decrypted = cipher.decrypt(ciphertext)
+
+                  # Remove PKCS7 padding
+                  padding_length = decrypted[-1]
+                  decrypted = decrypted[:-padding_length]
+
+                  return decrypted.decode('utf-8')
+              except Exception as e:
+                  return f"Error: {e}"
+
+          def decrypt_config_file(config_path, key):
+              """
+              Decrypt config file
+              """
+              with open(config_path, 'r') as f:
+                  config = json.load(f)
+
+              decrypted_config = []
+
+              for item in config:
+                  if isinstance(item, dict):
+                      decrypted_item = item.copy()
+
+                      # Try to decrypt common encrypted fields
+                      for field in ['SNIHost', 'Payload', 'Squid', 'OpenVPNSSLPort']:
+                          if field in item and item[field]:
+                              try:
+                                  decrypted_value = decrypt_aes_cbc(item[field], key)
+                                  decrypted_item[f'{field}_decrypted'] = decrypted_value
+                                  print(f"✓ {field}: {decrypted_value[:100]}")
+                              except:
+                                  pass
+
+                      decrypted_config.append(decrypted_item)
+
+              return decrypted_config
+
+          if __name__ == "__main__":
+              # TODO: Update these values based on analysis
+              KEY = "ocean2024"
+              CONFIG_FILE = "config.json"
+
+              print("=== APK Config Decryptor ===\n")
+              print(f"Key: {KEY}")
+              print(f"Config: {CONFIG_FILE}\n")
+
+              # Test single value
+              test_encrypted = "8I7ukXyL+FqXT4uqrckS8w=="
+              result = decrypt_aes_cbc(test_encrypted, KEY)
+              print(f"Test decrypt: {result}\n")
+
+              # Decrypt full config if exists
+              try:
+                  decrypted = decrypt_config_file(CONFIG_FILE, KEY)
+                  with open("config_decrypted.json", "w") as f:
+                      json.dump(decrypted, f, indent=2)
+                  print("\n✓ Decrypted config saved to: config_decrypted.json")
+              except FileNotFoundError:
+                  print("\n⚠ Config file not found. Use this script manually.")
+          EOF
+
+          chmod +x output/decrypt_config.py
+
+      - name: Upload Analysis Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-analysis-results
+          path: |
+            output/
+            !output/jadx/**/*.class
+            !output/apktool/build/
+          retention-days: 30
+
+      - name: Create Summary
+        run: |
+          echo "## 🔍 APK Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- Java files: $(find output/jadx -name '*.java' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- Keys found: $(jq '.keys_found | length' output/crypto_analysis.json)" >> $GITHUB_STEP_SUMMARY
+          echo "- URLs found: $(jq '.urls | length' output/network_analysis.json)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔐 Sample Keys Found" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          jq '.keys_found[:5]' output/crypto_analysis.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 Download full results from Artifacts" >> $GITHUB_STEP_SUMMARY

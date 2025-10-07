@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:name="com.tknetwork.tunnel.logger.JcLogs" android:orientation="vertical" android:background="@drawable/main_bg" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/tool_bar" />
+    <RelativeLayout android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="2.0dip">
+        <ListView android:textSize="18.0sp" android:id="@android:id/list" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_margin="10.0dip" android:transcriptMode="normal" android:divider="@null" android:dividerHeight="0.0dip" />
+        <ImageView android:id="@id/clearLogs" android:visibility="gone" android:layout_width="50.0dip" android:layout_height="50.0dip" android:layout_margin="20.0dip" android:src="@drawable/ic_delete" android:layout_alignParentRight="true" android:layout_alignParentBottom="true" app:tint="@color/colorAccent" />
+    </RelativeLayout>
+</LinearLayout>

@@ -1,0 +1,571 @@
+# .github/workflows/gemini-decrypt.yml
+name: Gemini AI - Auto Decrypt Config
+
+on:
+  push:
+    paths:
+      - 'servers.json'
+      - 'Servers.js'
+      - 'servers.js'
+      - 'key_search_report.txt'
+  workflow_dispatch:
+    inputs:
+      force_rerun:
+        description: 'Force re-analysis'
+        required: false
+        default: 'false'
+
+jobs:
+  decrypt-with-gemini:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pycryptodome
+
+      - name: Prepare files for Gemini
+        run: |
+          # Create analysis directory
+          mkdir -p gemini_analysis
+
+          # Find and copy server file
+          SERVER_FILE=""
+          if [ -f "servers.json" ]; then
+            SERVER_FILE="servers.json"
+          elif [ -f "Servers.js" ]; then
+            SERVER_FILE="Servers.js"
+          elif [ -f "servers.js" ]; then
+            SERVER_FILE="servers.js"
+          fi
+
+          if [ -n "$SERVER_FILE" ]; then
+            echo "Found server file: $SERVER_FILE"
+            cp "$SERVER_FILE" gemini_analysis/servers.json
+          else
+            echo "Server file (servers.json, Servers.js, or servers.js) not found"
+          fi
+
+          # Copy key search report
+          cp key_search_report.txt gemini_analysis/ 2>/dev/null || echo "key_search_report.txt not found"
+
+          # Create file list
+          echo "--- Files for analysis ---"
+          ls -lh gemini_analysis/
+
+      - name: Create Gemini API client
+        run: |
+          cat > gemini_decrypt.py << 'PYTHON_EOF'
+          #!/usr/bin/env python3
+          """
+          Gemini AI - Autonomous Config Decryptor
+          Uses Google Gemini API to analyze and decrypt config files
+          """
+
+          import os
+          import sys
+          import json
+          import requests
+          import base64
+          import time
+          from pathlib import Path
+
+          # Gemini API configuration
+          API_KEY = os.environ.get('GEMINI_API_KEY')
+          API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+
+          def read_file(filepath):
+              """Read file content"""
+              try:
+                  with open(filepath, 'r', encoding='utf-8') as f:
+                      return f.read()
+              except Exception as e:
+                  print(f"Error reading {filepath}: {e}")
+                  return None
+
+          def upload_file_to_gemini(filepath):
+              """Upload file to Gemini File API"""
+              upload_url = "https://generativelanguage.googleapis.com/upload/v1beta/files"
+
+              with open(filepath, 'rb') as f:
+                  files = {'file': (os.path.basename(filepath), f)}
+                  headers = {'X-goog-api-key': API_KEY}
+
+                  response = requests.post(upload_url, headers=headers, files=files)
+
+                  if response.status_code == 200:
+                      return response.json()
+                  else:
+                      print(f"Upload failed: {response.text}")
+                      return None
+
+          def create_analysis_prompt():
+              """Create comprehensive analysis prompt"""
+              return """
+          # AUTONOMOUS DECRYPTION MISSION
+
+          You are an expert reverse engineer. Analyze the uploaded files and decrypt the config.
+
+          ## FILES PROVIDED:
+          1. servers.json - Encrypted VPN configurations
+          2. key_search_report.txt - Potential encryption keys found in source code
+
+          ## YOUR TASKS:
+
+          ### PHASE 1: KEY DISCOVERY
+          1. Parse key_search_report.txt completely
+          2. Extract ALL potential keys (strings 4-32 chars)
+          3. Prioritize keys that look like: passwords, secrets, tokens
+          4. List top 10 key candidates
+
+          ### PHASE 2: ALGORITHM IDENTIFICATION
+          From key_search_report.txt, identify:
+          - Encryption algorithm (AES, DES, etc.)
+          - Cipher mode (CBC, ECB, GCM)
+          - Key derivation (SHA-256, MD5, PBKDF2, direct)
+          - IV handling (from data, from key, zero, fixed)
+          - Padding scheme (PKCS5, PKCS7, None)
+
+          ### PHASE 3: SYSTEMATIC DECRYPTION
+          For EACH key candidate, try these methods:
+
+          1. **Method 1: IV from first 16 bytes + SHA256(key)**
+          2. **Method 2: Zero IV + SHA256(key)**
+          3. **Method 3: IV from key hash + SHA256(key)**
+          4. **Method 4: Direct key (UTF-8 padded) + IV from data**
+          5. **Method 5: MD5(key) + IV from data**
+
+          ### PHASE 4: DECRYPT ALL FIELDS
+          From servers.json, decrypt:
+          - All SNIHost fields (3+ variants)
+          - All Payload fields (OpenVPN configs)
+          - All Squid fields (proxy addresses)
+
+          ### PHASE 5: VALIDATION
+          Verify decrypted output:
+          - Valid UTF-8 text
+          - Contains domains/IPs/URLs
+          - Makes sense for VPN config
+          - No binary garbage
+
+          ## OUTPUT FORMAT (STRICT):
+
+          ```json
+          {
+            "analysis_complete": true,
+            "key_found": "actual_encryption_key",
+            "key_source": "where found in key_search_report.txt",
+            "algorithm": {
+              "cipher": "AES-256-CBC",
+              "key_derivation": "SHA-256",
+              "iv_strategy": "first_16_bytes",
+              "padding": "PKCS7"
+            },
+            "decrypted_fields": {
+              "snihost_1": "decrypted value",
+              "snihost_2": "decrypted value",
+              "payload_1": "full OpenVPN config...",
+              "payload_2": "full OpenVPN config...",
+              "squid_1": "proxy:port",
+              "squid_2": "proxy:port"
+            },
+            "python_code": "working decryption script...",
+            "confidence": 95
+          }
+          ```
+
+          ## CRITICAL RULES:
+          1. ✅ Find key autonomously - don't ask me
+          2. ✅ Test ALL key candidates systematically
+          3. ✅ Try multiple algorithms until success
+          4. ✅ Decrypt ALL fields in servers.json
+          5. ✅ Provide working Python code
+          6. ❌ Don't give up after first failure
+          7. ❌ Don't say "I cannot" - only solutions
+
+          ## HINTS:
+          - Common keys: "ocean2024", "secret", "password123", app name, etc.
+          - VPN apps often use SHA-256 for key derivation
+          - IV typically first 16 bytes of encrypted data
+          - Base64 decode before decryption
+          - OpenVPN configs contain: "remote", "cert", "key", "client"
+
+          START AUTONOMOUS ANALYSIS NOW!
+          Return ONLY the JSON output, no other text.
+          """
+
+          def call_gemini_api(prompt, files_content=None):
+              """Call Gemini API with prompt and files"""
+
+              # Prepare request body
+              contents = []
+
+              # Add files as text parts
+              if files_content:
+                  for filename, content in files_content.items():
+                      contents.append({
+                          "role": "user",
+                          "parts": [
+                              {
+                                  "text": f"=== File: {filename} ===\n\n{content}\n\n"
+                              }
+                          ]
+                      })
+
+              # Add main prompt
+              contents.append({
+                  "role": "user",
+                  "parts": [{"text": prompt}]
+              })
+
+              request_body = {
+                  "contents": contents,
+                  "generationConfig": {
+                      "temperature": 0.2,
+                      "topK": 40,
+                      "topP": 0.95,
+                      "maxOutputTokens": 8192,
+                  },
+                  "safetySettings": [
+                      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                  ]
+              }
+
+              headers = {
+                  'Content-Type': 'application/json',
+                  'X-goog-api-key': API_KEY
+              }
+
+              print("📤 Sending request to Gemini API...")
+              response = requests.post(API_URL, headers=headers, json=request_body, timeout=180)
+
+              if response.status_code == 200:
+                  return response.json()
+              else:
+                  print(f"❌ API Error: {response.status_code}")
+                  print(f"Response: {response.text}")
+                  return None
+
+          def extract_json_from_response(response):
+              """Extract JSON from Gemini response"""
+              try:
+                  candidates = response.get('candidates', [])
+                  if not candidates:
+                      return None
+
+                  content = candidates[0].get('content', {})
+                  parts = content.get('parts', [])
+
+                  if not parts:
+                      return None
+
+                  text = parts[0].get('text', '')
+
+                  # Try to extract JSON from markdown code block
+                  if '```json' in text:
+                      json_start = text.find('```json') + 7
+                      json_end = text.find('```', json_start)
+                      json_text = text[json_start:json_end].strip()
+                  elif '```' in text:
+                      json_start = text.find('```') + 3
+                      json_end = text.find('```', json_start)
+                      json_text = text[json_start:json_end].strip()
+                  else:
+                      json_text = text.strip()
+
+                  # Parse JSON
+                  return json.loads(json_text)
+              except Exception as e:
+                  print(f"Error extracting JSON: {e}")
+                  print(f"Raw text: {text[:500]}")
+                  return None
+
+          def generate_python_script(result):
+              """Generate working Python decryption script"""
+
+              script = f'''#!/usr/bin/env python3
+          """
+          Auto-generated Decryption Script
+          Key: {result.get('key_found', 'UNKNOWN')}
+          Algorithm: {result.get('algorithm', {}).get('cipher', 'UNKNOWN')}
+          """
+
+          from Crypto.Cipher import AES
+          from Crypto.Hash import SHA256
+          import base64
+          import json
+
+          def sha256_hash(text):
+              return SHA256.new(text.encode('utf-8')).digest()
+
+          def decrypt_field(encrypted_b64, key_string):
+              """
+              Decrypt AES-CBC with SHA-256 key derivation
+              IV from first 16 bytes of encrypted data
+              """
+              try:
+                  # Derive key
+                  key = sha256_hash(key_string)
+
+                  # Decode base64
+                  encrypted_data = base64.b64decode(encrypted_b64)
+
+                  # Extract IV and ciphertext
+                  iv = encrypted_data[:16]
+                  ciphertext = encrypted_data[16:]
+
+                  # Decrypt
+                  cipher = AES.new(key, AES.MODE_CBC, iv)
+                  decrypted = cipher.decrypt(ciphertext)
+
+                  # Remove PKCS7 padding
+                  padding_length = decrypted[-1]
+                  if padding_length < 1 or padding_length > 16:
+                      raise ValueError("Invalid padding")
+                  decrypted = decrypted[:-padding_length]
+
+                  return decrypted.decode('utf-8')
+              except Exception as e:
+                  return f"Error: {{e}}"
+
+          def decrypt_servers_json(json_path, key):
+              """Decrypt all fields in servers.json"""
+              with open(json_path, 'r') as f:
+                  servers = json.load(f)
+
+              decrypted_servers = []
+
+              for server in servers:
+                  decrypted_server = server.copy()
+
+                  # Decrypt SNIHost
+                  if 'SNIHost' in server and server['SNIHost']:
+                      decrypted_server['SNIHost_decrypted'] = decrypt_field(server['SNIHost'], key)
+
+                  # Decrypt Payload
+                  if 'Payload' in server and server['Payload']:
+                      decrypted_server['Payload_decrypted'] = decrypt_field(server['Payload'], key)
+
+                  # Decrypt Squid
+                  if 'Squid' in server and server['Squid']:
+                      decrypted_server['Squid_decrypted'] = decrypt_field(server['Squid'], key)
+
+                  decrypted_servers.append(decrypted_server)
+
+              return decrypted_servers
+
+          if __name__ == "__main__":
+              KEY = "{result.get('key_found', 'UNKNOWN')}"
+
+              print("🔑 Decryption Key:", KEY)
+              print("🔐 Algorithm:", "{result.get('algorithm', {}).get('cipher', 'UNKNOWN')}")
+              print()
+
+              # Decrypt servers.json
+              decrypted = decrypt_servers_json('servers.json', KEY)
+
+              # Save output
+              with open('servers_decrypted.json', 'w') as f:
+                  json.dump(decrypted, f, indent=2)
+
+              print("✅ Decryption complete!")
+              print("📄 Output: servers_decrypted.json")
+
+              # Print summary
+              for server in decrypted:
+                  print(f"\\n{{server['Name']}}:")
+                  if 'SNIHost_decrypted' in server:
+                      print(f"  SNI: {{server['SNIHost_decrypted']}}")
+                  if 'Squid_decrypted' in server:
+                      print(f"  Proxy: {{server['Squid_decrypted']}}")
+          '''
+
+              return script
+
+          def main():
+              print("="*60)
+              print("🤖 GEMINI AI - AUTONOMOUS CONFIG DECRYPTOR")
+              print("="*60)
+              print()
+
+              if not API_KEY:
+                  print("❌ GEMINI_API_KEY not set!")
+                  sys.exit(1)
+
+              # Read input files
+              print("📂 Reading input files...")
+              files_content = {}
+
+              servers_json = read_file('gemini_analysis/servers.json')
+              if servers_json:
+                  files_content['servers.json'] = servers_json
+                  print("✅ servers.json loaded")
+
+              key_report = read_file('gemini_analysis/key_search_report.txt')
+              if key_report:
+                  files_content['key_search_report.txt'] = key_report
+                  print("✅ key_search_report.txt loaded")
+
+              if not files_content:
+                  print("❌ No input files found!")
+                  sys.exit(1)
+
+              print(f"\n📊 Total files: {len(files_content)}")
+              print()
+
+              # Create analysis prompt
+              prompt = create_analysis_prompt()
+
+              # Call Gemini API
+              print("🚀 Starting Gemini analysis...")
+              print("⏳ This may take 1-3 minutes...")
+              print()
+
+              response = call_gemini_api(prompt, files_content)
+
+              if not response:
+                  print("❌ API call failed!")
+                  sys.exit(1)
+
+              # Extract results
+              print("📊 Parsing results...")
+              result = extract_json_from_response(response)
+
+              if not result:
+                  print("⚠️  Could not parse JSON response")
+                  print("Raw response:")
+                  print(json.dumps(response, indent=2))
+                  sys.exit(1)
+
+              # Save results
+              print("\n" + "="*60)
+              print("✅ ANALYSIS COMPLETE")
+              print("="*60)
+              print()
+
+              print(f"🔑 Key Found: {result.get('key_found', 'UNKNOWN')}")
+              print(f"📍 Key Source: {result.get('key_source', 'UNKNOWN')}")
+              print(f"🔐 Algorithm: {result.get('algorithm', {}).get('cipher', 'UNKNOWN')}")
+              print(f"✨ Confidence: {result.get('confidence', 0)}%")
+              print()
+
+              # Save full results
+              with open('gemini_results.json', 'w') as f:
+                  json.dump(result, f, indent=2)
+              print("📄 Full results: gemini_results.json")
+
+              # Generate Python script
+              if result.get('key_found'):
+                  script = generate_python_script(result)
+                  with open('decrypt_auto.py', 'w') as f:
+                      f.write(script)
+                  os.chmod('decrypt_auto.py', 0o755)
+                  print("🐍 Python script: decrypt_auto.py")
+
+              # Save decrypted fields
+              if result.get('decrypted_fields'):
+                  with open('decrypted_fields.json', 'w') as f:
+                      json.dump(result.get('decrypted_fields'), f, indent=2)
+                  print("📦 Decrypted data: decrypted_fields.json")
+
+              print()
+              print("🎉 SUCCESS! Decryption complete.")
+
+              # Set output for GitHub Actions
+              with open(os.environ.get('GITHUB_OUTPUT', '/dev/stdout'), 'a') as f:
+                  f.write(f"key_found={result.get('key_found', 'UNKNOWN')}\n")
+                  f.write(f"confidence={result.get('confidence', 0)}\n")
+
+          if __name__ == "__main__":
+              main()
+          PYTHON_EOF
+
+          chmod +x gemini_decrypt.py
+
+      - name: Run Gemini Analysis
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python gemini_decrypt.py
+
+      - name: Verify Decryption
+        run: |
+          if [ -f "gemini_results.json" ]; then
+            echo "✅ Analysis complete"
+            cat gemini_results.json | jq '.' || cat gemini_results.json
+          else
+            echo "❌ Analysis failed"
+            exit 1
+          fi
+
+      - name: Run Auto-generated Decryption Script
+        if: success()
+        run: |
+          if [ -f "decrypt_auto.py" ]; then
+            python decrypt_auto.py
+          fi
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gemini-decryption-results
+          path: |
+            gemini_results.json
+            decrypted_fields.json
+            decrypt_auto.py
+            servers_decrypted.json
+          retention-days: 90
+
+      - name: Create Summary
+        if: always()
+        run: |
+          echo "## 🤖 Gemini AI Decryption Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "gemini_results.json" ]; then
+            KEY=$(jq -r '.key_found // "NOT FOUND"' gemini_results.json)
+            CONF=$(jq -r '.confidence // 0' gemini_results.json)
+            ALGO=$(jq -r '.algorithm.cipher // "UNKNOWN"' gemini_results.json)
+
+            echo "### ✅ Analysis Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Key Found:** \`$KEY\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Algorithm:** $ALGO" >> $GITHUB_STEP_SUMMARY
+            echo "- **Confidence:** $CONF%" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [ -f "decrypted_fields.json" ]; then
+              echo "### 🔓 Decrypted Fields" >> $GITHUB_STEP_SUMMARY
+              echo '```json' >> $GITHUB_STEP_SUMMARY
+              jq '.' decrypted_fields.json >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ❌ Analysis Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 Download full results from Artifacts" >> $GITHUB_STEP_SUMMARY
+
+      - name: Commit Decrypted Files (Optional)
+        if: success() && github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          git add -f servers_decrypted.json decrypt_auto.py 2>/dev/null || true
+          git commit -m "🤖 Auto-decrypt: Gemini AI analysis [skip ci]" || echo "No changes"
+          git push || echo "Push failed"
