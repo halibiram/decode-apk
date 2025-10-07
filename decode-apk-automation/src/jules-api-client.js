@@ -177,10 +177,14 @@ class JulesAPIClient {
           const newActivities = activities.activities.slice(lastActivityCount);
 
           for (const activity of newActivities) {
+            console.log('Raw activity object:', JSON.stringify(activity, null, 2));
+            const activityData = activity.oneofKind;
+            const message = activityData?.message?.message || 'No message';
+
             console.log('New activity:', {
-              type: activity.type,
+              type: activityData?.$case,
               status: activity.status,
-              message: activity.message || 'No message'
+              message: message,
             });
 
             // Check if session is complete or has errors
