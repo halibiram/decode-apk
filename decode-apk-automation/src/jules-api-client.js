@@ -147,9 +147,9 @@ class JulesAPIClient {
   }
 
   // 8. Send Message to Jules (for guidance/corrections)
-  async sendMessage(sessionId, prompt) {
+  async postMessageToSession(sessionId, message) {
     try {
-      const payload = { prompt };
+      const payload = { prompt: message };
       const response = await this.client.post(`/sessions/${sessionId}:sendMessage`, payload);
 
       console.log('Message sent to session:', sessionId);
