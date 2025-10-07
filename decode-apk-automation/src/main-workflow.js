@@ -54,19 +54,22 @@ async function runDecryptionWorkflow() {
       false // Auto-approve plan
     );
 
-    console.log(`\n=== Step 4: Monitoring Session ${session.id} ===`);
-    const result = await julesClient.monitorSession(session.id, 20000, 1800000); // 30 min timeout
+    // Extract the session ID from the 'name' field (e.g., "sessions/12345")
+    const sessionId = session.name.split('/').pop();
+
+    console.log(`\n=== Step 4: Monitoring Session ${sessionId} ===`);
+    const result = await julesClient.monitorSession(sessionId, 20000, 1800000); // 30 min timeout
 
     if (result.status === 'completed') {
       console.log('\n=== Step 5: Session Completed. Processing Final Report... ===');
-      const activities = await julesClient.getAllActivities(session.id);
+      const activities = await julesClient.getAllActivities(sessionId);
       const decryptedData = processActivityResult(activities);
 
       console.log('✅ Workflow completed successfully!');
       return { success: true, decryptedData: decryptedData };
     } else {
-      console.error(`❌ Session ${session.id} failed or timed out.`);
-      await errorHandler.handleError(session.id, 'DECRYPTION_FAILED', result.error || 'Timeout');
+      console.error(`❌ Session ${sessionId} failed or timed out.`);
+      await errorHandler.handleError(sessionId, 'DECRYPTION_FAILED', result.error || 'Timeout');
 
       return {
         success: false,
