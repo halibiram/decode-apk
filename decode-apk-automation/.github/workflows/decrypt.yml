@@ -1,0 +1,59 @@
+name: Decrypt Servers.js with Jules
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: 'Enable debug logging'
+        required: false
+        default: 'false'
+
+jobs:
+  decrypt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./decode-apk-automation
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: ./decode-apk-automation
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Jules API Decryption
+        working-directory: ./decode-apk-automation
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          DEEPSEEK_EMAIL: ${{ secrets.DEEPSEEK_EMAIL }}
+          DEEPSEEK_PASSWORD: ${{ secrets.DEEPSEEK_PASSWORD }}
+          DEBUG_MODE: ${{ github.event.inputs.debug_mode }}
+        run: node src/github-action-runner.js
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: decryption-results
+          path: |
+            decode-apk-automation/decryption-results.json
+            decode-apk-automation/logs/
+          retention-days: 7
+
+      - name: Commit results (optional)
+        if: success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add decode-apk-automation/decryption-results.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Add decryption results [skip ci]"
+          git push
