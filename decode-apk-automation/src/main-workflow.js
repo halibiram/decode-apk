@@ -10,12 +10,15 @@ const { generateDecryptionPrompt } = require('./decrypt-analyzer');
 function processActivityResult(activities) {
   console.log("Processing final activity result...");
   // Find the last agent message, which should contain the JSON report.
-  const agentMessages = activities.filter(a => a.type === 'AGENT_MESSAGE' && a.message);
+  // The activity type is now in `oneofKind.$case` and the message is nested.
+  const agentMessages = activities.filter(a => a.oneofKind?.$case === 'agentMessage' && a.oneofKind?.message?.message);
   if (agentMessages.length === 0) {
+    // Log all activities for debugging if no agent message is found
+    console.error("No agent messages found. All activities:", JSON.stringify(activities, null, 2));
     throw new Error("No agent messages found in activities. Cannot extract result.");
   }
 
-  const lastMessage = agentMessages[agentMessages.length - 1].message;
+  const lastMessage = agentMessages[agentMessages.length - 1].oneofKind.message.message;
 
   // Extract the JSON content from the markdown code block.
   const jsonMatch = lastMessage.match(/```json\s*([\s\S]*?)\s*```/);
